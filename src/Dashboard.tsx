@@ -24,6 +24,15 @@ import {
   SelectChangeEvent,
   Grid,
   CssBaseline,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Badge,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -32,6 +41,8 @@ import {
   Timer as TimerIcon,
   BarChart as BarChartIcon,
   Link as LinkIcon,
+  Block as BlockIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 
 interface PlayerStats {
@@ -61,6 +72,17 @@ interface LinkedAccount {
   platform_type: string;
   id_on_platform: string;
   name_on_platform: string;
+}
+
+interface SiegeBan {
+  uplay: string;
+  psn: string;
+  created_at: string;
+  xbl: string;
+  id: string;
+  profile_id: string;
+  ban_reason: number;
+  updated_at: string | null;
 }
 
 interface PlayerData {
@@ -95,6 +117,7 @@ interface PlayerData {
       warmup: PlayerStats;
     };
   };
+  bans?: SiegeBan[];
 }
 
 interface TabPanelProps {
@@ -259,9 +282,25 @@ export default function Dashboard() {
     setLoading(true);
     setData(null);
     try {
+      // Fetch player data
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lookup/${type}/${input}`);
-      const json = await res.json();
-      setData(json);
+      const playerData = await res.json();
+
+      // Fetch ban data
+      try {
+        const banRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lookup/bans/${input}/${type}`);
+        const banData = await banRes.json();
+
+        // Combine player data with ban data
+        setData({
+          ...playerData,
+          bans: banData.bans
+        });
+      } catch (banErr) {
+        // If no bans are found, just use the player data
+        console.log("No bans found or error fetching bans:", banErr);
+        setData(playerData);
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to fetch player data.');
@@ -372,7 +411,7 @@ export default function Dashboard() {
           )}
 
           {data && data.player && (
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, width: '98%' }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, width: '100%' }}>
                 <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 35%' }, height: { md: '650px' } }}>
                   <Card sx={{ height: '100%', boxShadow: 3 }}>
                     <CardHeader
@@ -391,20 +430,33 @@ export default function Dashboard() {
                           <Typography variant="h6" gutterBottom>
                             {data.player.name}
                           </Typography>
-                          <Chip
-                              label={`Level ${data.player.progress.level}`}
-                              size="small"
-                              color="primary"
-                              sx={{ mr: 1, mb: 1 }}
-                          />
-                          {data.player.stats.ranked.rank !== 'Unranked' && (
-                              <Chip
-                                  label={data.player.stats.ranked.rank}
-                                  size="small"
-                                  color="secondary"
-                                  sx={{ mb: 1 }}
-                              />
-                          )}
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Chip
+                                label={`Level ${data.player.progress.level}`}
+                                size="small"
+                                color="primary"
+                                sx={{ mr: 1, mb: 1 }}
+                            />
+                            {data.player.stats.ranked.rank !== 'Unranked' && (
+                                <Chip
+                                    label={data.player.stats.ranked.rank}
+                                    size="small"
+                                    color="secondary"
+                                    sx={{ mb: 1, mr: 1 }}
+                                />
+                            )}
+                            {data.bans && data.bans.length > 0 && (
+                                <Tooltip title={`This player has ${data.bans.length} ban(s)`}>
+                                  <Chip
+                                      icon={<BlockIcon fontSize="small" />}
+                                      label={`${data.bans.length} Ban${data.bans.length > 1 ? 's' : ''}`}
+                                      size="small"
+                                      color="error"
+                                      sx={{ mb: 1 }}
+                                  />
+                                </Tooltip>
+                            )}
+                          </Box>
                         </Box>
                       </Box>
 
@@ -490,6 +542,17 @@ export default function Dashboard() {
                         <Tab label="Ranked" icon={<EmojiEventsIcon />} iconPosition="start" />
                         <Tab label="Casual" icon={<GamepadIcon />} iconPosition="start" />
                         <Tab label="Standard" icon={<BarChartIcon />} iconPosition="start" />
+                        {data.bans && data.bans.length > 0 && (
+                            <Tab
+                                label="Bans"
+                                icon={
+                                  <Badge badgeContent={data.bans.length} color="error">
+                                    <BlockIcon />
+                                  </Badge>
+                                }
+                                iconPosition="start"
+                            />
+                        )}
                       </Tabs>
                     </Box>
 
@@ -504,6 +567,100 @@ export default function Dashboard() {
                     <TabPanel value={tabValue} index={2}>
                       <StatsPanel stats={data.player.stats.standard} />
                     </TabPanel>
+
+                    {data.bans && data.bans.length > 0 && (
+                        <TabPanel value={tabValue} index={3}>
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                              <WarningIcon color="error" sx={{ fontSize: 32, mr: 2 }} />
+                              <Typography variant="h6" color="error">
+                                Ban History
+                              </Typography>
+                            </Box>
+
+                            <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
+                              <Table>
+                                <TableHead>
+                                  <TableRow sx={{ backgroundColor: 'background.default' }}>
+                                    <TableCell>Ban Date</TableCell>
+                                    <TableCell>Ban Reason</TableCell>
+                                    <TableCell>Platform</TableCell>
+                                    <TableCell>Status</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {data.bans.map((ban, index) => {
+                                    // Convert ban reason code to readable text
+                                    const banReasonText = (() => {
+                                      switch (ban.ban_reason) {
+                                        case 1: return "Cheating";
+                                        case 2: return "Toxic Behavior";
+                                        case 3: return "Abandoning Match";
+                                        case 4: return "Exploiting";
+                                        default: return `Unknown (${ban.ban_reason})`;
+                                      }
+                                    })();
+
+                                    // Format date
+                                    const banDate = new Date(ban.created_at);
+                                    const formattedDate = banDate.toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    });
+
+                                    // Determine if ban is active or expired
+                                    const isActive = !ban.updated_at;
+
+                                    return (
+                                        <TableRow key={index} sx={{
+                                          '&:nth-of-type(odd)': { backgroundColor: 'action.hover' },
+                                          backgroundColor: isActive ? 'rgba(255, 0, 0, 0.05)' : 'inherit'
+                                        }}>
+                                          <TableCell>{formattedDate}</TableCell>
+                                          <TableCell>
+                                            <Chip
+                                                label={banReasonText}
+                                                color={
+                                                  ban.ban_reason === 1 ? "error" :
+                                                      ban.ban_reason === 2 ? "warning" :
+                                                          "default"
+                                                }
+                                                size="small"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            {ban.uplay && <Chip label="UPLAY" size="small" sx={{ mr: 0.5 }} />}
+                                            {ban.psn && <Chip label="PSN" size="small" sx={{ mr: 0.5 }} />}
+                                            {ban.xbl && <Chip label="XBOX" size="small" />}
+                                          </TableCell>
+                                          <TableCell>
+                                            <Chip
+                                                label={isActive ? "Active" : "Expired"}
+                                                color={isActive ? "error" : "success"}
+                                                size="small"
+                                            />
+                                          </TableCell>
+                                        </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+
+                            <Box sx={{ mt: 3 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                This player has received {data.bans.length} ban(s) in total.
+                                {data.bans.some(ban => !ban.updated_at) && (
+                                    <Typography component="span" color="error" sx={{ fontWeight: 'bold', ml: 1 }}>
+                                      One or more bans are currently active.
+                                    </Typography>
+                                )}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TabPanel>
+                    )}
                   </Card>
                 </Box>
               </Box>
