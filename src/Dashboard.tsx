@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Container,
   Box,
   Typography,
   TextField,
@@ -31,7 +30,6 @@ import {
   TableHead,
   TableRow,
   Badge,
-  IconButton,
   Tooltip,
 } from '@mui/material';
 import {
@@ -74,6 +72,17 @@ interface LinkedAccount {
   name_on_platform: string;
 }
 
+interface SiegeBanMetadata {
+  id: string;
+  source_application_id: string;
+  date_posted: string;
+  created_at: string;
+  ban_id: string;
+  notification_type: string;
+  space_id: string;
+  updated_at: string | null;
+}
+
 interface SiegeBan {
   uplay: string;
   psn: string;
@@ -83,6 +92,7 @@ interface SiegeBan {
   profile_id: string;
   ban_reason: number;
   updated_at: string | null;
+  metadata?: SiegeBanMetadata[];
 }
 
 interface PlayerData {
@@ -185,80 +195,76 @@ function StatsPanel({ stats }: { stats: PlayerStats }) {
         </Box>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined" sx={{ height: '100%', minHeight: '220px' }}>
-              <CardContent>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Win/Loss
+          <Card variant="outlined" sx={{height: '100%', minHeight: '250px', minWidth: '350px'}}>
+            <CardContent>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                Win/Loss
+              </Typography>
+              <Box sx={{display: 'flex', justifyContent: 'space-between', mb: 4}}>
+                <Box>
+                  <Typography variant="h6">{stats.wins}</Typography>
+                  <Typography variant="caption" color="text.secondary">Wins</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h6">{stats.losses}</Typography>
+                  <Typography variant="caption" color="text.secondary">Losses</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h6">{stats.abandons}</Typography>
+                  <Typography variant="caption" color="text.secondary">Abandons</Typography>
+                </Box>
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <Typography variant="caption" color="text.secondary">Win Rate</Typography>
+                <Typography variant="caption" fontWeight="bold">
+                  {stats.wins + stats.losses > 0
+                      ? `${Math.round((stats.wins / (stats.wins + stats.losses)) * 100)}%`
+                      : 'N/A'}
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Box>
-                    <Typography variant="h4">{stats.wins}</Typography>
-                    <Typography variant="body2" color="text.secondary">Wins</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="h4">{stats.losses}</Typography>
-                    <Typography variant="body2" color="text.secondary">Losses</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="h4">{stats.abandons}</Typography>
-                    <Typography variant="body2" color="text.secondary">Abandons</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Win Rate</Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    {stats.wins + stats.losses > 0
-                        ? `${Math.round((stats.wins / (stats.wins + stats.losses)) * 100)}%`
-                        : 'N/A'}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                    variant="determinate"
-                    value={stats.wins + stats.losses > 0
-                        ? (stats.wins / (stats.wins + stats.losses)) * 100
-                        : 0}
-                    sx={{ height: 8, borderRadius: 5, mt: 1 }}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
+              </Box>
+              <LinearProgress
+                  variant="determinate"
+                  value={stats.wins + stats.losses > 0
+                      ? (stats.wins / (stats.wins + stats.losses)) * 100
+                      : 0}
+                  sx={{height: 8, borderRadius: 5, mt: 1}}
+              />
+            </CardContent>
+          </Card>
 
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined" sx={{ height: '100%', minHeight: '220px' }}>
-              <CardContent>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Kill/Death
+          <Card variant="outlined" sx={{height: '100%', minHeight: '250px', minWidth: '400px'}}>
+            <CardContent>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                Kill/Death
+              </Typography>
+              <Box sx={{display: 'flex', justifyContent: 'space-between', mb: 2}}>
+                <Box>
+                  <Typography variant="h4">{stats.kills}</Typography>
+                  <Typography variant="body2" color="text.secondary">Kills</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h4">{stats.deaths}</Typography>
+                  <Typography variant="body2" color="text.secondary">Deaths</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h4">{stats.kill_death_ratio.toFixed(2)}</Typography>
+                  <Typography variant="body2" color="text.secondary">K/D Ratio</Typography>
+                </Box>
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <Typography variant="body2" color="text.secondary">K/D Comparison</Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {stats.kill_death_ratio >= 1 ? 'Positive' : 'Negative'}
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Box>
-                    <Typography variant="h4">{stats.kills}</Typography>
-                    <Typography variant="body2" color="text.secondary">Kills</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="h4">{stats.deaths}</Typography>
-                    <Typography variant="body2" color="text.secondary">Deaths</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="h4">{stats.kill_death_ratio.toFixed(2)}</Typography>
-                    <Typography variant="body2" color="text.secondary">K/D Ratio</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">K/D Comparison</Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    {stats.kill_death_ratio >= 1 ? 'Positive' : 'Negative'}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                    variant="determinate"
-                    value={Math.min(stats.kill_death_ratio * 50, 100)}
-                    color={stats.kill_death_ratio >= 1 ? "success" : "warning"}
-                    sx={{ height: 8, borderRadius: 5, mt: 1 }}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
+              </Box>
+              <LinearProgress
+                  variant="determinate"
+                  value={Math.min(stats.kill_death_ratio * 50, 100)}
+                  color={stats.kill_death_ratio >= 1 ? "success" : "warning"}
+                  sx={{height: 8, borderRadius: 5, mt: 1}}
+              />
+            </CardContent>
+          </Card>
         </Grid>
       </Box>
   );
@@ -270,11 +276,59 @@ export default function Dashboard() {
   const [data, setData] = useState<PlayerData | null>(null);
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const [metadata, setMetadata] = useState<{ [key: string]: SiegeBanMetadata[] }>({});
+  const [loadingMetadata, setLoadingMetadata] = useState<{ [key: string]: boolean }>({});
+
   useTheme();
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => setTabValue(newValue);
 
   const handleTypeChange = (event: SelectChangeEvent) => {
     setType(event.target.value as 'uplay' | 'profile_id');
+  };
+
+  const fetchBanMetadata = async (banId: string) => {
+    if (!data || !input) return;
+
+    // Update loading state for this specific ban
+    setLoadingMetadata(prev => ({
+      ...prev,
+      [banId]: true
+    }));
+
+    try {
+      // Direct API call
+      const metadataUrl = `${import.meta.env.VITE_API_BASE_URL}/lookup/bans/${input}/${type}/metadata`;
+      console.log(`Fetching metadata from: ${metadataUrl}`);
+
+      const response = await fetch(metadataUrl);
+      const result = await response.json();
+
+      console.log('Metadata API response:', result);
+
+      if (result && result.metadata) {
+        // Store the metadata keyed by ban ID
+        const banMetadata = result.metadata.filter(
+            (meta: SiegeBanMetadata) => meta.ban_id === banId
+        );
+
+        setMetadata(prev => ({
+          ...prev,
+          [banId]: banMetadata
+        }));
+
+        console.log(`Successfully fetched ${banMetadata.length} metadata records for ban ID: ${banId}`);
+      }
+    } catch (error) {
+      console.error('Error fetching ban metadata:', error);
+      alert('Failed to fetch ban metadata. See console for details.');
+    } finally {
+      // Update loading state
+      setLoadingMetadata(prev => ({
+        ...prev,
+        [banId]: false
+      }));
+    }
   };
 
   const fetchPlayer = async () => {
@@ -317,15 +371,15 @@ export default function Dashboard() {
 
   return (
       <>
-        <CssBaseline />
+        <CssBaseline/>
         <Box
             sx={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '100%',
-              maxWidth: 'lg',
+              width: '95%',
+              maxWidth: '1400px',
               p: 2
             }}
         >
@@ -341,8 +395,8 @@ export default function Dashboard() {
                 boxShadow: 3,
               }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <GamepadIcon sx={{ fontSize: 32, mr: 2, color: 'primary.main' }} />
+            <Box sx={{display: 'flex', alignItems: 'center', mb: 2}}>
+              <GamepadIcon sx={{fontSize: 32, mr: 2, color: 'primary.main'}}/>
               <Typography variant="h4">Rainbow Six Siege Player Lookup</Typography>
             </Box>
             <Typography variant="body1" color="text.secondary">
@@ -350,57 +404,51 @@ export default function Dashboard() {
             </Typography>
           </Paper>
 
-          <Paper sx={{ p: 3, mb: 4, borderRadius: 2, boxShadow: 2 }}>
+          <Paper sx={{p: 3, mb: 4, borderRadius: 2, boxShadow: 2}}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={3} md={3}>
-                <FormControl fullWidth size="small">
-                  <InputLabel id="lookup-type-label">Lookup Type</InputLabel>
-                  <Select
-                      labelId="lookup-type-label"
-                      value={type}
-                      label="Lookup Type"
-                      onChange={handleTypeChange}
-                  >
-                    <MenuItem value="uplay">Uplay</MenuItem>
-                    <MenuItem value="profile_id">Profile ID</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={6}>
-                <TextField
-                    fullWidth
-                    size="small"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={type === 'uplay' ? 'Enter Uplay Name' : 'Enter Profile ID'}
-                    label={type === 'uplay' ? 'Uplay Name' : 'Profile ID'}
-                    variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12} sm={3} md={3}>
-                <Button
-                    fullWidth
-                    variant="contained"
-                    color="primary"
-                    onClick={fetchPlayer}
-                    disabled={loading || !input}
-                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+              <FormControl fullWidth size="small">
+                <InputLabel id="lookup-type-label">Lookup Type</InputLabel>
+                <Select
+                    labelId="lookup-type-label"
+                    value={type}
+                    label="Lookup Type"
+                    onChange={handleTypeChange}
                 >
-                  {loading ? 'Searching...' : 'Lookup Player'}
-                </Button>
-              </Grid>
+                  <MenuItem value="uplay">Uplay</MenuItem>
+                  <MenuItem value="profile_id">Profile ID</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                  fullWidth
+                  size="small"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={type === 'uplay' ? 'Enter Uplay Name' : 'Enter Profile ID'}
+                  label={type === 'uplay' ? 'Uplay Name' : 'Profile ID'}
+                  variant="outlined"
+              />
+              <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  onClick={fetchPlayer}
+                  disabled={loading || !input}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit"/> : null}
+              >
+                {loading ? 'Searching...' : 'Lookup Player'}
+              </Button>
             </Grid>
           </Paper>
 
           {loading && (
-              <Box sx={{ width: '100%', mb: 4 }}>
-                <LinearProgress />
+              <Box sx={{width: '100%', mb: 4}}>
+                <LinearProgress/>
               </Box>
           )}
 
           {!loading && !data && (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <GamepadIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2, opacity: 0.3 }} />
+              <Box sx={{textAlign: 'center', py: 8}}>
+                <GamepadIcon sx={{fontSize: 60, color: 'text.secondary', mb: 2, opacity: 0.3}}/>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   No player data to display
                 </Typography>
@@ -411,48 +459,48 @@ export default function Dashboard() {
           )}
 
           {data && data.player && (
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, width: '100%' }}>
-                <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 35%' }, height: { md: '650px' } }}>
-                  <Card sx={{ height: '100%', boxShadow: 3 }}>
+              <Box sx={{display: 'flex', flexDirection: {xs: 'column', md: 'row'}, gap: 3, width: '100%'}}>
+                <Box sx={{flex: {xs: '1 1 100%', md: '0 0 35%'}, height: {md: '750px'}}}>
+                  <Card sx={{height: '100%', boxShadow: 3}}>
                     <CardHeader
                         title="Player Profile"
-                        avatar={<PersonIcon color="primary" />}
-                        sx={{ borderBottom: 1, borderColor: 'divider', pb: 1 }}
+                        avatar={<PersonIcon color="primary"/>}
+                        sx={{borderBottom: 1, borderColor: 'divider', pb: 1}}
                     />
                     <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Box sx={{display: 'flex', alignItems: 'center', mb: 3}}>
                         <Avatar
                             src={data.player.profile_pic_url}
                             alt={data.player.name}
-                            sx={{ width: 80, height: 80, mr: 2, border: '2px solid', borderColor: 'primary.main' }}
+                            sx={{width: 80, height: 80, mr: 2, border: '2px solid', borderColor: 'primary.main'}}
                         />
                         <Box>
                           <Typography variant="h6" gutterBottom>
                             {data.player.name}
                           </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{display: 'flex', alignItems: 'center'}}>
                             <Chip
                                 label={`Level ${data.player.progress.level}`}
                                 size="small"
                                 color="primary"
-                                sx={{ mr: 1, mb: 1 }}
+                                sx={{mr: 1, mb: 1}}
                             />
                             {data.player.stats.ranked.rank !== 'Unranked' && (
                                 <Chip
                                     label={data.player.stats.ranked.rank}
                                     size="small"
                                     color="secondary"
-                                    sx={{ mb: 1, mr: 1 }}
+                                    sx={{mb: 1, mr: 1}}
                                 />
                             )}
                             {data.bans && data.bans.length > 0 && (
                                 <Tooltip title={`This player has ${data.bans.length} ban(s)`}>
                                   <Chip
-                                      icon={<BlockIcon fontSize="small" />}
+                                      icon={<BlockIcon fontSize="small"/>}
                                       label={`${data.bans.length} Ban${data.bans.length > 1 ? 's' : ''}`}
                                       size="small"
                                       color="error"
-                                      sx={{ mb: 1 }}
+                                      sx={{mb: 1}}
                                   />
                                 </Tooltip>
                             )}
@@ -460,46 +508,40 @@ export default function Dashboard() {
                         </Box>
                       </Box>
 
-                      <Divider sx={{ my: 2 }} />
+                      <Divider sx={{my: 2}}/>
 
                       <Typography variant="subtitle2" gutterBottom color="primary">
-                        <TimerIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                        <TimerIcon fontSize="small" sx={{verticalAlign: 'middle', mr: 1}}/>
                         Playtime
                       </Typography>
-                      <Grid container spacing={1} sx={{ mb: 2 }}>
-                        <Grid item xs={4}>
-                          <Typography variant="body2" color="text.secondary">PvP</Typography>
-                          <Typography variant="body1">
-                            {formatTime(data.player.playtime.pvp_time_played)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={4}>
-                          <Typography variant="body2" color="text.secondary">PvE</Typography>
-                          <Typography variant="body1">
-                            {formatTime(data.player.playtime.pve_time_played)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={4}>
-                          <Typography variant="body2" color="text.secondary">Total</Typography>
-                          <Typography variant="body1" fontWeight="bold">
-                            {data.player.playtime.total_time_played_hours} hours
-                          </Typography>
-                        </Grid>
+                      <Grid container spacing={1} sx={{mb: 2}}>
+                        <Typography variant="body2" color="text.secondary">PvP</Typography>
+                        <Typography variant="body1">
+                          {formatTime(data.player.playtime.pvp_time_played)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">PvE</Typography>
+                        <Typography variant="body1">
+                          {formatTime(data.player.playtime.pve_time_played)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">Total</Typography>
+                        <Typography variant="body1" fontWeight="bold">
+                          {data.player.playtime.total_time_played_hours} hours
+                        </Typography>
                       </Grid>
 
-                      <Divider sx={{ my: 2 }} />
+                      <Divider sx={{my: 2}}/>
 
                       <Typography variant="subtitle2" gutterBottom color="primary">
-                        <BarChartIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                        <BarChartIcon fontSize="small" sx={{verticalAlign: 'middle', mr: 1}}/>
                         Progress
                       </Typography>
                       <Typography variant="body2" color="text.secondary">Level Progress</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Box sx={{ width: '100%', mr: 1 }}>
+                      <Box sx={{display: 'flex', alignItems: 'center', mb: 1}}>
+                        <Box sx={{width: '100%', mr: 1}}>
                           <LinearProgress
                               variant="determinate"
                               value={(data.player.progress.xp / (data.player.progress.xp + data.player.progress.xp_to_level_up)) * 100}
-                              sx={{ height: 8, borderRadius: 5 }}
+                              sx={{height: 8, borderRadius: 5}}
                           />
                         </Box>
                         <Typography variant="body2" color="text.secondary">
@@ -507,17 +549,18 @@ export default function Dashboard() {
                         </Typography>
                       </Box>
                       <Typography variant="caption" color="text.secondary">
-                        {data.player.progress.xp.toLocaleString()} / {(data.player.progress.xp + data.player.progress.xp_to_level_up).toLocaleString()} XP to Level {data.player.progress.level + 1}
+                        {data.player.progress.xp.toLocaleString()} / {(data.player.progress.xp + data.player.progress.xp_to_level_up).toLocaleString()} XP
+                        to Level {data.player.progress.level + 1}
                       </Typography>
 
-                      <Divider sx={{ my: 2 }} />
+                      <Divider sx={{my: 2}}/>
 
                       <Typography variant="subtitle2" gutterBottom color="primary">
-                        <LinkIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                        <LinkIcon fontSize="small" sx={{verticalAlign: 'middle', mr: 1}}/>
                         Linked Accounts
                       </Typography>
                       {data.player.linked_accounts.map((account, index) => (
-                          <Box key={index} sx={{ mb: 1 }}>
+                          <Box key={index} sx={{mb: 1}}>
                             <Typography variant="body2" color="text.secondary">
                               {account.platform_type.toUpperCase()}
                             </Typography>
@@ -530,24 +573,24 @@ export default function Dashboard() {
                   </Card>
                 </Box>
 
-                <Box sx={{ flex: { xs: '1 1 100%', md: '0 0 65%' }, height: { md: '650px' } }}>
-                  <Card sx={{ height: '100%', boxShadow: 3 }}>
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Box sx={{flex: {xs: '1 1 100%', md: '0 0 63.5%'}, height: {md: '750px'}}}>
+                  <Card sx={{height: '100%', boxShadow: 3}}>
+                    <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
                       <Tabs
                           value={tabValue}
                           onChange={handleTabChange}
                           aria-label="player stats tabs"
-                          sx={{ '& .MuiTab-root': { minWidth: 100 } }}
+                          sx={{'& .MuiTab-root': {minWidth: 100}}}
                       >
-                        <Tab label="Ranked" icon={<EmojiEventsIcon />} iconPosition="start" />
-                        <Tab label="Casual" icon={<GamepadIcon />} iconPosition="start" />
-                        <Tab label="Standard" icon={<BarChartIcon />} iconPosition="start" />
+                        <Tab label="Ranked" icon={<EmojiEventsIcon/>} iconPosition="start"/>
+                        <Tab label="Casual" icon={<GamepadIcon/>} iconPosition="start"/>
+                        <Tab label="Standard" icon={<BarChartIcon/>} iconPosition="start"/>
                         {data.bans && data.bans.length > 0 && (
                             <Tab
                                 label="Bans"
                                 icon={
                                   <Badge badgeContent={data.bans.length} color="error">
-                                    <BlockIcon />
+                                    <BlockIcon/>
                                   </Badge>
                                 }
                                 iconPosition="start"
@@ -557,35 +600,35 @@ export default function Dashboard() {
                     </Box>
 
                     <TabPanel value={tabValue} index={0}>
-                      <StatsPanel stats={data.player.stats.ranked} />
+                      <StatsPanel stats={data.player.stats.ranked}/>
                     </TabPanel>
 
                     <TabPanel value={tabValue} index={1}>
-                      <StatsPanel stats={data.player.stats.casual} />
+                      <StatsPanel stats={data.player.stats.casual}/>
                     </TabPanel>
 
                     <TabPanel value={tabValue} index={2}>
-                      <StatsPanel stats={data.player.stats.standard} />
+                      <StatsPanel stats={data.player.stats.standard}/>
                     </TabPanel>
 
                     {data.bans && data.bans.length > 0 && (
                         <TabPanel value={tabValue} index={3}>
                           <Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                              <WarningIcon color="error" sx={{ fontSize: 32, mr: 2 }} />
+                            <Box sx={{display: 'flex', alignItems: 'center', mb: 3}}>
+                              <WarningIcon color="error" sx={{fontSize: 32, mr: 2}}/>
                               <Typography variant="h6" color="error">
                                 Ban History
                               </Typography>
                             </Box>
 
-                            <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
+                            <TableContainer component={Paper} sx={{boxShadow: 2}}>
                               <Table>
                                 <TableHead>
-                                  <TableRow sx={{ backgroundColor: 'background.default' }}>
-                                    <TableCell>Ban Date</TableCell>
-                                    <TableCell>Ban Reason</TableCell>
-                                    <TableCell>Platform</TableCell>
-                                    <TableCell>Status</TableCell>
+                                  <TableRow sx={{backgroundColor: 'background.default'}}>
+                                    <TableCell width="20%">Ban Date</TableCell>
+                                    <TableCell width="20%">Ban Reason</TableCell>
+                                    <TableCell width="20%">Platform</TableCell>
+                                    <TableCell width="40%">Status / Actions</TableCell>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -593,11 +636,16 @@ export default function Dashboard() {
                                     // Convert ban reason code to readable text
                                     const banReasonText = (() => {
                                       switch (ban.ban_reason) {
-                                        case 1: return "Cheating";
-                                        case 2: return "Toxic Behavior";
-                                        case 3: return "Abandoning Match";
-                                        case 4: return "Exploiting";
-                                        default: return `Unknown (${ban.ban_reason})`;
+                                        case 1:
+                                          return "Cheating";
+                                        case 2:
+                                          return "Toxic Behavior";
+                                        case 3:
+                                          return "Abandoning Match";
+                                        case 4:
+                                          return "Exploiting";
+                                        default:
+                                          return `Unknown (${ban.ban_reason})`;
                                       }
                                     })();
 
@@ -614,7 +662,7 @@ export default function Dashboard() {
 
                                     return (
                                         <TableRow key={index} sx={{
-                                          '&:nth-of-type(odd)': { backgroundColor: 'action.hover' },
+                                          '&:nth-of-type(odd)': {backgroundColor: 'action.hover'},
                                           backgroundColor: isActive ? 'rgba(255, 0, 0, 0.05)' : 'inherit'
                                         }}>
                                           <TableCell>{formattedDate}</TableCell>
@@ -630,16 +678,119 @@ export default function Dashboard() {
                                             />
                                           </TableCell>
                                           <TableCell>
-                                            {ban.uplay && <Chip label="UPLAY" size="small" sx={{ mr: 0.5 }} />}
-                                            {ban.psn && <Chip label="PSN" size="small" sx={{ mr: 0.5 }} />}
-                                            {ban.xbl && <Chip label="XBOX" size="small" />}
+                                            {ban.uplay && <Chip label="UPLAY" size="small" sx={{mr: 0.5}}/>}
+                                            {ban.psn && <Chip label="PSN" size="small" sx={{mr: 0.5}}/>}
+                                            {ban.xbl && <Chip label="XBOX" size="small"/>}
                                           </TableCell>
                                           <TableCell>
-                                            <Chip
-                                                label={isActive ? "Active" : "Expired"}
-                                                color={isActive ? "error" : "success"}
-                                                size="small"
-                                            />
+                                            <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                              <Chip
+                                                  label={isActive ? "Active" : "Expired"}
+                                                  color={isActive ? "error" : "success"}
+                                                  size="small"
+                                                  sx={{mr: 1}}
+                                              />
+                                              <Button
+                                                  variant="outlined"
+                                                  size="small"
+                                                  onClick={() => fetchBanMetadata(ban.id)}
+                                                  disabled={!!loadingMetadata[ban.id]}
+                                              >
+                                                {loadingMetadata[ban.id] ? (
+                                                    <>
+                                                      <CircularProgress size={16} sx={{mr: 1}}/>
+                                                      Loading...
+                                                    </>
+                                                ) : 'View Metadata'}
+                                              </Button>
+                                            </Box>
+
+                                            {/* Display metadata if it exists for this ban */}
+                                            {metadata[ban.id] && metadata[ban.id].length > 0 && (
+                                                <Box sx={{
+                                                  mt: 2,
+                                                  p: 1,
+                                                  borderRadius: 1,
+                                                  bgcolor: 'background.paper',
+                                                  boxShadow: 1,
+                                                  width: '98%',
+                                                  ml: 1,
+                                                  fontSize: '0.9rem'
+                                                }}>
+                                                  <Typography variant="subtitle2" gutterBottom
+                                                              sx={{fontWeight: 'bold'}}>
+                                                    Ban Metadata:
+                                                  </Typography>
+                                                  <TableContainer sx={{maxWidth: '100%'}}>
+                                                    <Table size="small"
+                                                           sx={{tableLayout: 'fixed', fontSize: '0.85rem'}}>
+                                                      <TableHead>
+                                                        <TableRow>
+                                                          <TableCell width="30%" sx={{
+                                                            py: 0.5,
+                                                            fontWeight: 'bold'
+                                                          }}>Property</TableCell>
+                                                          <TableCell width="70%" sx={{
+                                                            py: 0.5,
+                                                            fontWeight: 'bold'
+                                                          }}>Value</TableCell>
+                                                        </TableRow>
+                                                      </TableHead>
+                                                      <TableBody>
+                                                        {metadata[ban.id].map((meta, metaIndex) => (
+                                                            <React.Fragment key={metaIndex}>
+                                                              <TableRow>
+                                                                <TableCell component="th" scope="row" sx={{py: 0.5}}>Source
+                                                                  Application</TableCell>
+                                                                <TableCell sx={{
+                                                                  wordBreak: 'break-word',
+                                                                  py: 0.5
+                                                                }}>{meta.source_application_id}</TableCell>
+                                                              </TableRow>
+                                                              <TableRow>
+                                                                <TableCell component="th" scope="row" sx={{py: 0.5}}>Date
+                                                                  Posted</TableCell>
+                                                                <TableCell sx={{py: 0.5}}>
+                                                                  {new Date(meta.date_posted).toLocaleString()}</TableCell>
+                                                              </TableRow>
+                                                              <TableRow>
+                                                                <TableCell component="th" scope="row" sx={{py: 0.5}}>Notification
+                                                                  Type</TableCell>
+                                                                <TableCell sx={{
+                                                                  wordBreak: 'break-word',
+                                                                  py: 0.5
+                                                                }}>{meta.notification_type}</TableCell>
+                                                              </TableRow>
+                                                              <TableRow>
+                                                                <TableCell component="th" scope="row" sx={{py: 0.5}}>Space
+                                                                  ID</TableCell>
+                                                                <TableCell sx={{
+                                                                  wordBreak: 'break-word',
+                                                                  py: 0.5
+                                                                }}>{meta.space_id}</TableCell>
+                                                              </TableRow>
+                                                              <TableRow>
+                                                                <TableCell component="th" scope="row" sx={{py: 0.5}}>Created
+                                                                  At</TableCell>
+                                                                <TableCell sx={{py: 0.5}}>
+                                                                  {new Date(meta.created_at).toLocaleString()}</TableCell>
+                                                              </TableRow>
+                                                              <TableRow>
+                                                                <TableCell component="th" scope="row"
+                                                                           sx={{py: 0.5}}>ID</TableCell>
+                                                                <TableCell sx={{
+                                                                  wordBreak: 'break-word',
+                                                                  fontSize: '0.8rem',
+                                                                  py: 0.5
+                                                                }}>{meta.id}</TableCell>
+                                                              </TableRow>
+                                                            </React.Fragment>
+                                                        ))}
+                                                      </TableBody>
+                                                    </Table>
+                                                  </TableContainer>
+                                                </Box>
+                                            )}
                                           </TableCell>
                                         </TableRow>
                                     );
@@ -648,11 +799,11 @@ export default function Dashboard() {
                               </Table>
                             </TableContainer>
 
-                            <Box sx={{ mt: 3 }}>
+                            <Box sx={{mt: 3}}>
                               <Typography variant="body2" color="text.secondary">
                                 This player has received {data.bans.length} ban(s) in total.
                                 {data.bans.some(ban => !ban.updated_at) && (
-                                    <Typography component="span" color="error" sx={{ fontWeight: 'bold', ml: 1 }}>
+                                    <Typography component="span" color="error" sx={{fontWeight: 'bold', ml: 1}}>
                                       One or more bans are currently active.
                                     </Typography>
                                 )}
