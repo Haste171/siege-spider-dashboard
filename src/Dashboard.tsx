@@ -31,6 +31,7 @@ import {
   TableRow,
   Badge,
   Tooltip,
+  
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -41,6 +42,7 @@ import {
   Link as LinkIcon,
   Block as BlockIcon,
   Warning as WarningIcon,
+  Launch as LaunchIcon,
 } from '@mui/icons-material';
 
 interface PlayerStats {
@@ -70,6 +72,7 @@ interface LinkedAccount {
   platform_type: string;
   id_on_platform: string;
   name_on_platform: string;
+  info_link: string | null;
 }
 
 interface SiegeBanMetadata {
@@ -101,6 +104,7 @@ interface PlayerData {
     profile_id: string;
     uuid: string;
     profile_pic_url: string;
+    locker_link: string;
     linked_accounts: LinkedAccount[];
     persona: {
       tag: string;
@@ -478,7 +482,7 @@ export default function Dashboard() {
                           <Typography variant="h6" gutterBottom>
                             {data.player.name}
                           </Typography>
-                          <Box sx={{display: 'flex', alignItems: 'center'}}>
+                          <Box sx={{display: 'flex', alignItems: 'center', flexWrap: 'wrap'}}>
                             <Chip
                                 label={`Level ${data.player.progress.level}`}
                                 size="small"
@@ -505,6 +509,23 @@ export default function Dashboard() {
                                 </Tooltip>
                             )}
                           </Box>
+                          <Button
+                              component="a"
+                              variant="contained"
+                              color="primary"
+                              size="small"
+                              startIcon={<LaunchIcon />}
+                              href={data.player.locker_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{ mt: 1 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(data.player.locker_link, '_blank', 'noopener,noreferrer');
+                              }}
+                          >
+                            View Locker
+                          </Button>
                         </Box>
                       </Box>
 
@@ -564,9 +585,37 @@ export default function Dashboard() {
                             <Typography variant="body2" color="text.secondary">
                               {account.platform_type.toUpperCase()}
                             </Typography>
-                            <Typography variant="body2">
-                              {account.name_on_platform}
-                            </Typography>
+                            {account.info_link ? (
+                                <Button
+                                    component="a"
+                                    href={account.info_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    color="primary"
+                                    variant="text"
+                                    size="small"
+                                    endIcon={<LaunchIcon fontSize="small" />}
+                                    sx={{
+                                      p: 0,
+                                      minWidth: 'auto',
+                                      textTransform: 'none',
+                                      fontWeight: 'normal',
+                                      justifyContent: 'flex-start',
+                                      color: 'primary.main',
+                                      '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(account.info_link || '', '_blank', 'noopener,noreferrer');
+                                    }}
+                                >
+                                  {account.name_on_platform}
+                                </Button>
+                            ) : (
+                                <Typography variant="body2">
+                                  {account.name_on_platform}
+                                </Typography>
+                            )}
                           </Box>
                       ))}
                     </CardContent>
