@@ -157,7 +157,7 @@ function StatsPanel({ stats }: { stats: PlayerStats }) {
             {stats.rank_id > 0 && (
                 <Box sx={{ mr: 2 }}>
                   <img
-                      src={`/src/assets/ranks/rank_${stats.rank_id}.png`}
+                      src={`/assets/ranks/rank_${stats.rank_id}.png`}
                       alt={stats.rank}
                       style={{ width: '80px', height: '80px' }}
                   />
