@@ -393,7 +393,7 @@ export default function Dashboard() {
                 mb: 3,
                 borderRadius: 2,
                 backgroundImage:
-                    'linear-gradient(to right, rgba(45,45,45,0.95), rgba(45,45,45,0.95)), url(https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/7qSZdEMRFLzLgiBDNmBUVP/fb4b112c8037c714230e863ade8a0b2f/r6s-header-mobile.jpg)',
+                    'linear-gradient(to right, rgba(45,45,45,0.95), rgba(45,45,45,0.95)), url(https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/tEEyaA4a5j3WdXaef4XRy/e9645d1287ea9e43b68ded2982268dff/Header_231334.png)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 boxShadow: 3,

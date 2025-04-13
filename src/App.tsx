@@ -1,8 +1,10 @@
-// src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import Dashboard from './Dashboard';
+import Navbar from './Navbar';
+import Lookup from './Lookup';
+import Bans from './Bans';
+import './App.css';
 
 // Custom R6S-inspired theme
 const theme = createTheme({
@@ -53,14 +55,26 @@ const theme = createTheme({
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100vh',
+            width: '100%',
+            overflowX: 'hidden'
+          }}>
+            <Navbar />
+            <div style={{ flex: 1 }}>
+              <Routes>
+                <Route path="/" element={<Lookup />} />
+                <Route path="/bans" element={<Bans />} />
+              </Routes>
+            </div>
+          </div>
+        </BrowserRouter>
+      </ThemeProvider>
   );
 }
 
