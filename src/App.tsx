@@ -1,9 +1,12 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Navbar from './Navbar';
 import Lookup from './Lookup';
 import Bans from './Bans';
+import Login from './Login';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 // Custom R6S-inspired theme
@@ -58,21 +61,34 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: '100vh',
-            width: '100%',
-            overflowX: 'hidden'
-          }}>
-            <Navbar />
-            <div style={{ flex: 1 }}>
-              <Routes>
-                <Route path="/" element={<Lookup />} />
-                <Route path="/bans" element={<Bans />} />
-              </Routes>
+          <AuthProvider>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: '100vh',
+              width: '100%',
+              overflowX: 'hidden'
+            }}>
+              <Navbar />
+              <div style={{ flex: 1 }}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <Lookup />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/bans" element={
+                    <ProtectedRoute>
+                      <Bans />
+                    </ProtectedRoute>
+                  } />
+                  {/* Catch-all redirect to home */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
             </div>
-          </div>
+          </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>
   );

@@ -15,20 +15,30 @@ import {
     ListItemText,
     Divider,
     useMediaQuery,
+    Menu,
+    MenuItem,
+    Tooltip,
+
 } from '@mui/material';
 import {
     Menu as MenuIcon,
     Person as PersonIcon,
     Block as BlockIcon,
     Gamepad as GamepadIcon,
+    AccountCircle as AccountCircleIcon,
+    Logout as LogoutIcon,
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 
 const Navbar: React.FC = () => {
     const theme = useTheme();
     const location = useLocation();
+    const navigate = useNavigate();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const { isAuthenticated, user, logout } = useAuth();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
     const handleDrawerToggle = () => {
         setDrawerOpen(!drawerOpen);
@@ -36,6 +46,20 @@ const Navbar: React.FC = () => {
 
     const isActive = (path: string) => {
         return location.pathname === path;
+    };
+
+    const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseUserMenu = () => {
+        setAnchorEl(null);
+    };
+
+    const handleLogout = () => {
+        handleCloseUserMenu();
+        logout();
+        navigate('/login');
     };
 
     const links = [
@@ -92,7 +116,8 @@ const Navbar: React.FC = () => {
                             R6S Spider
                         </Typography>
                     </Box>
-                    {!isMobile && (
+
+                    {!isMobile && isAuthenticated && (
                         <Box sx={{ display: 'flex', ml: 4 }}>
                             {links.map((link) => (
                                 <Button
@@ -111,6 +136,41 @@ const Navbar: React.FC = () => {
                                     {link.text}
                                 </Button>
                             ))}
+                        </Box>
+                    )}
+
+                    {isAuthenticated && (
+                        <Box sx={{ ml: 'auto' }}>
+                            <Tooltip title="Account settings">
+                                <IconButton onClick={handleOpenUserMenu} color="inherit">
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <Typography variant="body2" sx={{ mr: 1, display: { xs: 'none', sm: 'block' } }}>
+                                            {user?.username}
+                                        </Typography>
+                                        <AccountCircleIcon />
+                                    </Box>
+                                </IconButton>
+                            </Tooltip>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={handleCloseUserMenu}
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                anchorOrigin={{
+                                    vertical: 'bottom',
+                                    horizontal: 'right',
+                                }}
+                            >
+                                <MenuItem onClick={handleLogout}>
+                                    <ListItemIcon>
+                                        <LogoutIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <Typography textAlign="center">Logout</Typography>
+                                </MenuItem>
+                            </Menu>
                         </Box>
                     )}
                 </Toolbar>

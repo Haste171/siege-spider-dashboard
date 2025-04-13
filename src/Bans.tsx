@@ -33,6 +33,7 @@ import {
     Refresh as RefreshIcon,
     Warning as WarningIcon,
 } from '@mui/icons-material';
+import { fetchWithAuth } from './utils/api';
 
 interface SiegeBan {
     id: string;
@@ -75,7 +76,7 @@ export default function Bans() {
     const fetchBans = async (page: number = 1, limit: number = 25) => {
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await fetchWithAuth(
                 `${import.meta.env.VITE_API_BASE_URL}/bans?page=${page}&limit=${limit}`
             );
             const data: BansResponse = await response.json();

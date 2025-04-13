@@ -44,6 +44,7 @@ import {
     Warning as WarningIcon,
     Launch as LaunchIcon,
 } from '@mui/icons-material';
+import { fetchWithAuth } from './utils/api';
 
 interface PlayerStats {
     max_rank_id: number;
@@ -305,7 +306,7 @@ export default function Lookup() {
             const metadataUrl = `${import.meta.env.VITE_API_BASE_URL}/lookup/bans/${input}/${type}/metadata`;
             console.log(`Fetching metadata from: ${metadataUrl}`);
 
-            const response = await fetch(metadataUrl);
+            const response = await fetchWithAuth(metadataUrl);
             const result = await response.json();
 
             console.log('Metadata API response:', result);
@@ -341,12 +342,12 @@ export default function Lookup() {
         setData(null);
         try {
             // Fetch player data
-            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lookup/${type}/${input}`);
+            const res = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/lookup/${type}/${input}`);
             const playerData = await res.json();
 
             // Fetch ban data
             try {
-                const banRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lookup/bans/${input}/${type}`);
+                const banRes = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/lookup/bans/${input}/${type}`);
                 const banData = await banRes.json();
 
                 // Combine player data with ban data
