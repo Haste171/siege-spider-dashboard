@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -31,7 +31,6 @@ import {
     TableRow,
     Badge,
     Tooltip,
-
 } from '@mui/material';
 import {
     Person as PersonIcon,
@@ -45,7 +44,9 @@ import {
     Launch as LaunchIcon,
 } from '@mui/icons-material';
 import { fetchWithAuth } from './utils/api';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+// Interfaces
 interface PlayerStats {
     max_rank_id: number;
     max_rank: string;
@@ -283,13 +284,81 @@ export default function Lookup() {
     const [tabValue, setTabValue] = useState(0);
     const [metadata, setMetadata] = useState<{ [key: string]: SiegeBanMetadata[] }>({});
     const [loadingMetadata, setLoadingMetadata] = useState<{ [key: string]: boolean }>({});
+    const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
+
+    const location = useLocation();
+    const navigate = useNavigate();
 
     useTheme();
+
+    // Process URL parameters only once on component mount
+    useEffect(() => {
+        if (!urlParamsProcessed) {
+            const params = new URLSearchParams(location.search);
+            const typeParam = params.get('type');
+            const idParam = params.get('id');
+
+            if (typeParam && idParam) {
+                if (typeParam === 'uplay' || typeParam === 'profile_id') {
+                    setType(typeParam as 'uplay' | 'profile_id');
+                    setInput(idParam);
+
+                    // Use the separate function for URL parameter loading
+                    fetchFromUrlParams(typeParam as 'uplay' | 'profile_id', idParam);
+                }
+            }
+
+            setUrlParamsProcessed(true);
+        }
+    }, [location.search, urlParamsProcessed]);
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => setTabValue(newValue);
 
     const handleTypeChange = (event: SelectChangeEvent) => {
         setType(event.target.value as 'uplay' | 'profile_id');
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInput(e.target.value);
+    };
+
+    // Special fetch function that doesn't update the URL (for URL parameter loading)
+    const fetchFromUrlParams = async (searchType: 'uplay' | 'profile_id', searchInput: string) => {
+        if (!searchInput) return;
+
+        console.log(`Loading player from URL params: ${searchType}, ${searchInput}`);
+        setLoading(true);
+        setData(null);
+
+        try {
+            // Fetch player data
+            const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/lookup/${searchType}/${searchInput}`;
+            console.log(`Fetching from: ${apiUrl}`);
+
+            const res = await fetchWithAuth(apiUrl);
+            const playerData = await res.json();
+
+            // Fetch ban data
+            try {
+                const banRes = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/lookup/bans/${searchInput}/${searchType}`);
+                const banData = await banRes.json();
+
+                // Combine player data with ban data
+                setData({
+                    ...playerData,
+                    bans: banData.bans
+                });
+            } catch (banErr) {
+                // If no bans are found, just use the player data
+                console.log("No bans found or error fetching bans:", banErr);
+                setData(playerData);
+            }
+        } catch (err) {
+            console.error("Error fetching player data:", err);
+            alert('Failed to fetch player data.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const fetchBanMetadata = async (banId: string) => {
@@ -336,13 +405,20 @@ export default function Lookup() {
         }
     };
 
+    // Regular fetch function that updates the URL (for button click)
     const fetchPlayer = async () => {
         if (!input) return;
+
+        console.log(`Fetching player: ${type}, ${input}`);
         setLoading(true);
         setData(null);
+
         try {
             // Fetch player data
-            const res = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/lookup/${type}/${input}`);
+            const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/lookup/${type}/${input}`;
+            console.log(`Fetching from: ${apiUrl}`);
+
+            const res = await fetchWithAuth(apiUrl);
             const playerData = await res.json();
 
             // Fetch ban data
@@ -355,13 +431,20 @@ export default function Lookup() {
                     ...playerData,
                     bans: banData.bans
                 });
+
+                // Update URL after successful fetch
+                navigate(`/lookup?type=${type}&id=${encodeURIComponent(input)}`, { replace: true });
+
             } catch (banErr) {
                 // If no bans are found, just use the player data
                 console.log("No bans found or error fetching bans:", banErr);
                 setData(playerData);
+
+                // Still update URL if player data was successful
+                navigate(`/lookup?type=${type}&id=${encodeURIComponent(input)}`, { replace: true });
             }
         } catch (err) {
-            console.error(err);
+            console.error("Error fetching player data:", err);
             alert('Failed to fetch player data.');
         } finally {
             setLoading(false);
@@ -423,7 +506,7 @@ export default function Lookup() {
                             fullWidth
                             size="small"
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                            onChange={handleInputChange}
                             placeholder={type === 'uplay' ? 'Enter Uplay Name' : 'Enter Profile ID'}
                             label={type === 'uplay' ? 'Uplay Name' : 'Profile ID'}
                             variant="outlined"

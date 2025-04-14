@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Navbar from './Navbar';
 import Lookup from './Lookup';
 import Bans from './Bans';
 import Login from './Login';
+import Match from './Match'; // Import the Match component
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -56,6 +57,32 @@ const theme = createTheme({
   },
 });
 
+// Custom Route guard to check if we're on a valid path with parameters before redirecting
+function CustomRedirect() {
+  const location = useLocation();
+
+  // Don't redirect if we're on lookup with parameters
+  if (location.pathname === '/lookup' && location.search.includes('?')) {
+    return (
+        <ProtectedRoute>
+          <Lookup />
+        </ProtectedRoute>
+    );
+  }
+
+  // Don't redirect if we're on match with parameters
+  if (location.pathname === '/match' && location.search.includes('?')) {
+    return (
+        <ProtectedRoute>
+          <Match />
+        </ProtectedRoute>
+    );
+  }
+
+  // Otherwise redirect to home
+  return <Navigate to="/" replace />;
+}
+
 function App() {
   return (
       <ThemeProvider theme={theme}>
@@ -83,8 +110,18 @@ function App() {
                       <Bans />
                     </ProtectedRoute>
                   } />
-                  {/* Catch-all redirect to home */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="/lookup" element={
+                    <ProtectedRoute>
+                      <Lookup />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/match" element={
+                    <ProtectedRoute>
+                      <Match />
+                    </ProtectedRoute>
+                  } />
+                  {/* Custom catch-all that checks for valid routes with parameters */}
+                  <Route path="*" element={<CustomRedirect />} />
                 </Routes>
               </div>
             </div>
