@@ -73,6 +73,7 @@ interface PlayerStats {
     losses: number;
     win_loss_ratio: number;
     abandons: number;
+    risk_score: number;
 }
 
 interface PlayerInfo {
@@ -126,6 +127,37 @@ function TabPanel(props: TabPanelProps) {
             {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
         </div>
     );
+}
+
+// Helper function to determine if risk score data exists
+function hasRiskData(stats: PlayerStats): boolean {
+    return stats.risk_score !== undefined && stats.risk_score !== null;
+}
+
+// Helper function to determine risk color based on score
+function getRiskProgressColor(score: number | undefined | null): "success" | "warning" | "error" | "info" {
+    if (score === undefined || score === null) return "info";
+    if (score < 30) return "success";
+    if (score < 60) return "warning";
+    return "error";
+}
+function getRiskTextColor(score: number | undefined | null): string {
+    if (score === undefined || score === null) return "text.secondary";
+    if (score < 30) return "success.main";
+    if (score < 60) return "warning.main";
+    return "error.main";
+}
+
+// Helper function to get risk label
+function getRiskLabel(score: number | undefined | null): string {
+    if (score === undefined || score === null) return "No Data Available";
+    if (score === 0) return "Minimum Risk";
+
+    if (score < 20) return "Low Risk";
+    if (score < 40) return "Moderate Risk";
+    if (score < 60) return "Medium Risk";
+    if (score < 80) return "High Risk";
+    return "Very High Risk";
 }
 
 function StatsPanel({ stats }: { stats: PlayerStats }) {
@@ -244,6 +276,32 @@ function StatsPanel({ stats }: { stats: PlayerStats }) {
                             variant="determinate"
                             value={Math.min(stats.kill_death_ratio * 50, 100)}
                             color={stats.kill_death_ratio >= 1 ? "success" : "warning"}
+                            sx={{ height: 8, borderRadius: 5, mt: 1 }}
+                        />
+                    </CardContent>
+                </Card>
+                <Card variant="outlined" sx={{ height: '100%', mt: 2 }}>
+                    <CardContent>
+                        <Typography variant="subtitle2" color="primary" gutterBottom>
+                            Risk Analysis
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                            <Box>
+                                <Typography variant="h6">{stats.risk_score || 0}</Typography>
+                                <Typography variant="caption" color="text.secondary">Risk Score</Typography>
+                            </Box>
+                            <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="h6">{getRiskLabel(stats.risk_score)}</Typography>
+                                <Typography variant="caption" color="text.secondary">Assessment</Typography>
+                            </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="caption" color="text.secondary">Risk Level</Typography>
+                        </Box>
+                        <LinearProgress
+                            variant="determinate"
+                            value={stats.risk_score || 0}
+                            color={getRiskProgressColor(stats.risk_score)}
                             sx={{ height: 8, borderRadius: 5, mt: 1 }}
                         />
                     </CardContent>
@@ -746,6 +804,7 @@ export default function Match() {
                                                     <TableCell align="center">Rank</TableCell>
                                                     <TableCell align="center">W/L Ratio</TableCell>
                                                     <TableCell align="center">K/D Ratio</TableCell>
+                                                    <TableCell align="center">Risk Score</TableCell>
                                                     <TableCell align="center">Actions</TableCell>
                                                 </TableRow>
                                             </TableHead>
@@ -810,6 +869,40 @@ export default function Match() {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell align="center">
+                                                            {hasRiskData(playerData.player.stats.ranked) ? (
+                                                                <Tooltip title={getRiskLabel(playerData.player.stats.ranked.risk_score)}>
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            color={getRiskTextColor(playerData.player.stats.ranked.risk_score)}
+                                                                            fontWeight="bold"
+                                                                        >
+                                                                            {playerData.player.stats.ranked.risk_score}
+                                                                        </Typography>
+                                                                        <LinearProgress
+                                                                            variant="determinate"
+                                                                            value={playerData.player.stats.ranked.risk_score}
+                                                                            color={getRiskProgressColor(playerData.player.stats.ranked.risk_score)}
+                                                                            sx={{ height: 6, width: '80%', borderRadius: 3, mt: 0.5 }}
+                                                                        />
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            ) : (
+                                                                <Tooltip title="No risk assessment data available">
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <Typography variant="body2" color="text.secondary">
+                                                                            N/A
+                                                                        </Typography>
+                                                                        <LinearProgress
+                                                                            variant="indeterminate"
+                                                                            color="inherit"
+                                                                            sx={{ height: 6, width: '80%', borderRadius: 3, mt: 0.5, opacity: 0.3 }}
+                                                                        />
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell align="center">
                                                             <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
                                                                 <Button
                                                                     variant="outlined"
@@ -866,6 +959,7 @@ export default function Match() {
                                                     <TableCell align="center">Rank</TableCell>
                                                     <TableCell align="center">W/L Ratio</TableCell>
                                                     <TableCell align="center">K/D Ratio</TableCell>
+                                                    <TableCell align="center">Risk Score</TableCell>
                                                     <TableCell align="center">Actions</TableCell>
                                                 </TableRow>
                                             </TableHead>
@@ -930,6 +1024,40 @@ export default function Match() {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell align="center">
+                                                            {hasRiskData(playerData.player.stats.ranked) ? (
+                                                                <Tooltip title={getRiskLabel(playerData.player.stats.ranked.risk_score)}>
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            color={getRiskTextColor(playerData.player.stats.ranked.risk_score)}
+                                                                            fontWeight="bold"
+                                                                        >
+                                                                            {playerData.player.stats.ranked.risk_score}
+                                                                        </Typography>
+                                                                        <LinearProgress
+                                                                            variant="determinate"
+                                                                            value={playerData.player.stats.ranked.risk_score}
+                                                                            color={getRiskProgressColor(playerData.player.stats.ranked.risk_score)}
+                                                                            sx={{ height: 6, width: '80%', borderRadius: 3, mt: 0.5 }}
+                                                                        />
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            ) : (
+                                                                <Tooltip title="No risk assessment data available">
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <Typography variant="body2" color="text.secondary">
+                                                                            N/A
+                                                                        </Typography>
+                                                                        <LinearProgress
+                                                                            variant="indeterminate"
+                                                                            color="inherit"
+                                                                            sx={{ height: 6, width: '80%', borderRadius: 3, mt: 0.5, opacity: 0.3 }}
+                                                                        />
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell align="center">
                                                             <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
                                                                 <Button
                                                                     variant="outlined"
@@ -969,6 +1097,7 @@ export default function Match() {
                                                                 </Button>
                                                             </Box>
                                                         </TableCell>
+
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
