@@ -929,6 +929,17 @@ export default function Match() {
                                                                 >
                                                                     Bans
                                                                 </Button>
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    startIcon={<LaunchIcon />}
+                                                                    onClick={(e: React.MouseEvent) => {
+                                                                        e.stopPropagation();
+                                                                        window.open(playerData.player.locker_link, '_blank', 'noopener,noreferrer');
+                                                                    }}
+                                                                >
+                                                                    Locker
+                                                                </Button>
 
                                                             </Box>
                                                         </TableCell>
