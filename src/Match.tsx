@@ -82,6 +82,7 @@ interface PlayerInfo {
     uuid: string;
     profile_pic_url: string;
     locker_link: string;
+    statscc_link: string;
     linked_accounts: LinkedAccount[];
     persona: {
         tag: string | null;
@@ -940,6 +941,17 @@ export default function Match() {
                                                                 >
                                                                     Locker
                                                                 </Button>
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    startIcon={<LaunchIcon />}
+                                                                    onClick={(e: React.MouseEvent) => {
+                                                                        e.stopPropagation();
+                                                                        window.open(playerData.player.statscc_link, '_blank', 'noopener,noreferrer');
+                                                                    }}
+                                                                >
+                                                                    stats.cc
+                                                                </Button>
 
                                                             </Box>
                                                         </TableCell>
@@ -1105,6 +1117,17 @@ export default function Match() {
                                                                     }}
                                                                 >
                                                                     Locker
+                                                                </Button>
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    startIcon={<LaunchIcon />}
+                                                                    onClick={(e: React.MouseEvent) => {
+                                                                        e.stopPropagation();
+                                                                        window.open(playerData.player.statscc_link, '_blank', 'noopener,noreferrer');
+                                                                    }}
+                                                                >
+                                                                    stats.cc
                                                                 </Button>
                                                             </Box>
                                                         </TableCell>
