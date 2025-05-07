@@ -19,7 +19,6 @@ import {
     Tooltip,
     Divider,
     Button,
-    useTheme,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -43,7 +42,7 @@ import {
     Link as LinkIcon,
     Videocam as VideocamIcon, // Added for Twitch streaming
 } from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { fetchWithAuth } from './utils/api';
 
 interface LinkedAccount {
@@ -122,6 +121,9 @@ interface PlayerInfo {
     statscc_link: string;
     linked_accounts: LinkedAccount[];
     twitch_info?: TwitchInfo[]; // Added twitch_info field
+    current_platform_info?: {
+        platform: string;
+    }; // Added current platform info
     persona: {
         tag: string | null;
         enabled: boolean;
@@ -227,6 +229,25 @@ function getRiskProgressColor(score: number | undefined | null): "success" | "wa
     if (score < 60) return "warning";
     return "error";
 }
+
+// Helper function to get platform icon based on platform name
+function getPlatformIcon(platform: string | undefined) {
+    if (!platform) return null;
+
+    switch (platform.toLowerCase()) {
+        case 'uplay':
+            return <img src="/assets/platforms/windows.png" alt="PC" style={{ width: '16px', height: '16px', marginRight: '4px' }} />;
+        case 'ps4':
+        case 'ps5':
+            return <img src="/assets/platforms/psn.png" alt="PlayStation" style={{ width: '16px', height: '16px', marginRight: '4px' }} />;
+        case 'xbox_one':
+        case 'xbox_scarlett':
+            return <img src="/assets/platforms/xbox.png" alt="Xbox" style={{ width: '16px', height: '16px', marginRight: '4px' }} />;
+        default:
+            return null;
+    }
+}
+
 function getRiskTextColor(score: number | undefined | null): string {
     if (score === undefined || score === null) return "text.secondary";
     if (score < 30) return "success.main";
@@ -366,7 +387,8 @@ function StatsPanel({ stats }: { stats: PlayerStats }) {
                         />
                     </CardContent>
                 </Card>
-                <Card variant="outlined" sx={{ height: '100%', mt: 2 }}>
+
+                <Card variant="outlined" sx={{ height: '100%' }}>
                     <CardContent>
                         <Typography variant="subtitle2" color="primary" gutterBottom>
                             Risk Analysis
@@ -452,15 +474,18 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                 />
                                 <Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        {/* Platform Icon */}
+                                        {getPlatformIcon(playerData.player.current_platform_info?.platform)}
+
                                         <Typography variant="h6">
                                             {playerData.player.name}
                                         </Typography>
 
                                         {/* Add Twitch Live Stream Icon */}
-                                        {hasTwitchInfo(playerData.player) && (
+                                        {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
                                             <Tooltip title={
                                                 isLiveOnTwitch(playerData.player)
-                                                    ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player)}`
+                                                    ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player) || 'Streaming'}`
                                                     : `Twitch: ${getTwitchChannelName(playerData.player)}`
                                             }>
                                                 <IconButton
@@ -469,6 +494,11 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     size="small"
+                                                    onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                                        e.stopPropagation();
+                                                        e.preventDefault();
+                                                        window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
+                                                    }}
                                                     sx={{
                                                         p: 0.5,
                                                         color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
@@ -723,7 +753,7 @@ export default function Match() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const location = useLocation();
-    useNavigate();
+    // Remove unused navigate variable
     // Add a ref to track if we've already fetched data
     const dataFetchedRef = useRef<boolean>(false);
 
@@ -735,8 +765,6 @@ export default function Match() {
     const [linkedAccountsAnchorEl, setLinkedAccountsAnchorEl] = useState<HTMLElement | null>(null);
     const [linkedAccountsPlayer, setLinkedAccountsPlayer] = useState<PlayerData | null>(null);
     const linkedAccountsOpen = Boolean(linkedAccountsAnchorEl);
-
-    useTheme();
 
     // Handle opening player info dialog
     const handleOpenPlayerInfo = (playerData: PlayerData) => {
@@ -841,73 +869,77 @@ export default function Match() {
                 />
                 <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body1">
-                            {playerData.player.name}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {/* Platform Icon */}
+                            {getPlatformIcon(playerData.player.current_platform_info?.platform)}
 
-                        {/* Add Twitch Live Stream Icon */}
-                        {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
-                            <Tooltip title={
-                                isLiveOnTwitch(playerData.player)
-                                    ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player) || 'Streaming'}`
-                                    : `Twitch: ${getTwitchChannelName(playerData.player)}`
-                            }>
-                                <IconButton
-                                    component="a"
-                                    href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    size="small"
-                                    onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
-                                    }}
-                                    sx={{
-                                        p: 0.5,
-                                        color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
-                                    }}
-                                >
-                                    <VideocamIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                        )}
+                            <Typography variant="body1">
+                                {playerData.player.name}
+                            </Typography>
 
-                        {/* Linked accounts icon */}
-                        {playerData.player.linked_accounts &&
-                            playerData.player.linked_accounts.length > 0 && (
-                                <Badge
-                                    badgeContent={playerData.player.linked_accounts.length}
-                                    color={playerData.team === 1 ? "primary" : "secondary"}
-                                    sx={{
-                                        ml: 1,
-                                        '& .MuiBadge-badge': {
-                                            fontSize: '0.7rem',
-                                            minWidth: '20px',
-                                            height: '20px'
-                                        }
-                                    }}
-                                >
+                            {/* Add Twitch Live Stream Icon */}
+                            {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
+                                <Tooltip title={
+                                    isLiveOnTwitch(playerData.player)
+                                        ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player) || 'Streaming'}`
+                                        : `Twitch: ${getTwitchChannelName(playerData.player)}`
+                                }>
                                     <IconButton
+                                        component="a"
+                                        href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         size="small"
-                                        onClick={(e: React.MouseEvent<HTMLElement>) => handleOpenLinkedAccounts(e, playerData)}
+                                        onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
+                                        }}
                                         sx={{
-                                            border: `2px solid ${playerData.team === 1 ? 'primary.main' : 'secondary.main'}`,
                                             p: 0.5,
-                                            backgroundColor: 'rgba(0,0,0,0.05)'
+                                            color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
                                         }}
                                     >
-                                        <LinkIcon
-                                            sx={{
-                                                fontSize: '1.2rem',
-                                                color: playerData.team === 1 ? 'primary.main' : 'secondary.main'
-                                            }}
-                                        />
+                                        <VideocamIcon fontSize="small" />
                                     </IconButton>
-                                </Badge>
+                                </Tooltip>
                             )}
-                    </Box>
 
+                            {/* Linked accounts icon */}
+                            {playerData.player.linked_accounts &&
+                                playerData.player.linked_accounts.length > 0 && (
+                                    <Badge
+                                        badgeContent={playerData.player.linked_accounts.length}
+                                        color={playerData.team === 1 ? "primary" : "secondary"}
+                                        sx={{
+                                            ml: 1,
+                                            '& .MuiBadge-badge': {
+                                                fontSize: '0.7rem',
+                                                minWidth: '20px',
+                                                height: '20px'
+                                            }
+                                        }}
+                                    >
+                                        <IconButton
+                                            size="small"
+                                            onClick={(e: React.MouseEvent<HTMLElement>) => handleOpenLinkedAccounts(e, playerData)}
+                                            sx={{
+                                                border: `2px solid ${playerData.team === 1 ? 'primary.main' : 'secondary.main'}`,
+                                                p: 0.5,
+                                                backgroundColor: 'rgba(0,0,0,0.05)'
+                                            }}
+                                        >
+                                            <LinkIcon
+                                                sx={{
+                                                    fontSize: '1.2rem',
+                                                    color: playerData.team === 1 ? 'primary.main' : 'secondary.main'
+                                                }}
+                                            />
+                                        </IconButton>
+                                    </Badge>
+                                )}
+                        </Box>
+                    </Box>
                     {playerData.player.persona.enabled && (
                         <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                             {playerData.player.persona.nickname}
@@ -1141,7 +1173,6 @@ export default function Match() {
                                                                 >
                                                                     stats.cc
                                                                 </Button>
-
                                                             </Box>
                                                         </TableCell>
                                                     </TableRow>
@@ -1320,7 +1351,6 @@ export default function Match() {
                                                                 </Button>
                                                             </Box>
                                                         </TableCell>
-
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
