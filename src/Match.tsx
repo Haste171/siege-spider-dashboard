@@ -41,6 +41,7 @@ import {
     Timer as TimerIcon,
     BarChart as BarChartIcon,
     Link as LinkIcon,
+    Videocam as VideocamIcon, // Added for Twitch streaming
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from './utils/api';
@@ -52,6 +53,42 @@ interface LinkedAccount {
     id_on_platform: string;
     name_on_platform: string;
     info_link: string | null;
+}
+
+// Add Twitch stream interface
+interface TwitchStream {
+    id: string;
+    title: string;
+    game: {
+        id: string;
+        name: string;
+    };
+}
+
+// Add Twitch user interface
+interface TwitchUser {
+    id: string;
+    channel: {
+        id: string;
+        name: string;
+        chatters: {
+            count: number;
+        };
+    };
+    stream: TwitchStream | null;
+    isPartner: boolean;
+}
+
+// Add Twitch info interface
+interface TwitchInfo {
+    data: {
+        user: TwitchUser;
+    };
+    extensions: {
+        durationMilliseconds: number;
+        operationName: string;
+        requestID: string;
+    };
 }
 
 interface PlayerStats {
@@ -84,6 +121,7 @@ interface PlayerInfo {
     locker_link: string;
     statscc_link: string;
     linked_accounts: LinkedAccount[];
+    twitch_info?: TwitchInfo[]; // Added twitch_info field
     persona: {
         tag: string | null;
         enabled: boolean;
@@ -128,6 +166,53 @@ function TabPanel(props: TabPanelProps) {
             {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
         </div>
     );
+}
+
+// Helper function to check if a player has Twitch info
+function hasTwitchInfo(playerInfo: PlayerInfo): boolean {
+    try {
+        return Boolean(
+            playerInfo.twitch_info &&
+            playerInfo.twitch_info.length > 0 &&
+            playerInfo.twitch_info[0]?.data?.user?.channel?.name
+        );
+    } catch (e) {
+        console.error("Error checking Twitch info:", e);
+        return false;
+    }
+}
+
+// Helper function to check if a player is live on Twitch
+function isLiveOnTwitch(playerInfo: PlayerInfo): boolean {
+    try {
+        if (!hasTwitchInfo(playerInfo)) return false;
+        return Boolean(playerInfo.twitch_info?.[0]?.data?.user?.stream);
+    } catch (e) {
+        console.error("Error checking if player is live on Twitch:", e);
+        return false;
+    }
+}
+
+// Helper function to get Twitch channel name
+function getTwitchChannelName(playerInfo: PlayerInfo): string | null {
+    try {
+        if (!hasTwitchInfo(playerInfo)) return null;
+        return playerInfo.twitch_info?.[0]?.data?.user?.channel?.name || null;
+    } catch (e) {
+        console.error("Error getting Twitch channel name:", e);
+        return null;
+    }
+}
+
+// Helper function to get Twitch stream title
+function getTwitchStreamTitle(playerInfo: PlayerInfo): string | null {
+    try {
+        if (!isLiveOnTwitch(playerInfo)) return null;
+        return playerInfo.twitch_info?.[0]?.data?.user?.stream?.title || null;
+    } catch (e) {
+        console.error("Error getting Twitch stream title:", e);
+        return null;
+    }
 }
 
 // Helper function to determine if risk score data exists
@@ -366,9 +451,35 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                     sx={{ width: 80, height: 80, mr: 2, border: '2px solid', borderColor: 'primary.main' }}
                                 />
                                 <Box>
-                                    <Typography variant="h6" gutterBottom>
-                                        {playerData.player.name}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="h6">
+                                            {playerData.player.name}
+                                        </Typography>
+
+                                        {/* Add Twitch Live Stream Icon */}
+                                        {hasTwitchInfo(playerData.player) && (
+                                            <Tooltip title={
+                                                isLiveOnTwitch(playerData.player)
+                                                    ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player)}`
+                                                    : `Twitch: ${getTwitchChannelName(playerData.player)}`
+                                            }>
+                                                <IconButton
+                                                    component="a"
+                                                    href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    size="small"
+                                                    sx={{
+                                                        p: 0.5,
+                                                        color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
+                                                    }}
+                                                >
+                                                    <VideocamIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </Box>
+
                                     {playerData.player.persona.enabled && (
                                         <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                                             {playerData.player.persona.nickname}
@@ -440,6 +551,55 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                 to Level {playerData.player.progress.level + 1}
                             </Typography>
 
+                            {/* Twitch Info Section */}
+                            {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
+                                <>
+                                    <Divider sx={{ my: 2 }} />
+                                    <Typography variant="subtitle2" gutterBottom color="primary">
+                                        <VideocamIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                        Twitch Channel
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary">Channel</Typography>
+                                        <Button
+                                            component="a"
+                                            href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            variant="text"
+                                            color="primary"
+                                            endIcon={<LaunchIcon fontSize="small" />}
+                                            sx={{
+                                                textTransform: 'none',
+                                            }}
+                                            onClick={(e: React.MouseEvent) => {
+                                                e.stopPropagation();
+                                                window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
+                                            }}
+                                        >
+                                            {getTwitchChannelName(playerData.player)}
+                                        </Button>
+                                    </Box>
+                                    {isLiveOnTwitch(playerData.player) && (
+                                        <Box sx={{ mt: 1 }}>
+                                            <Typography variant="body2" color="text.secondary">Status</Typography>
+                                            <Chip
+                                                label="Live Now"
+                                                color="error"
+                                                size="small"
+                                                icon={<VideocamIcon />}
+                                                sx={{ mt: 0.5 }}
+                                            />
+                                            {getTwitchStreamTitle(playerData.player) && (
+                                                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                                                    {getTwitchStreamTitle(playerData.player)}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
+                                </>
+                            )}
+
                             {playerData.player.linked_accounts.length > 0 && (
                                 <>
                                     <Divider sx={{ my: 2 }} />
@@ -448,6 +608,7 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                         <LinkIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
                                         Linked Accounts
                                     </Typography>
+
                                     {playerData.player.linked_accounts.map((account: LinkedAccount, index: number) => (
                                         <Box key={index} sx={{ mb: 1 }}>
                                             <Typography variant="body2" color="text.secondary">
@@ -684,7 +845,35 @@ export default function Match() {
                             {playerData.player.name}
                         </Typography>
 
-                        {/* Fixed linked accounts icon with proper handler */}
+                        {/* Add Twitch Live Stream Icon */}
+                        {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
+                            <Tooltip title={
+                                isLiveOnTwitch(playerData.player)
+                                    ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player) || 'Streaming'}`
+                                    : `Twitch: ${getTwitchChannelName(playerData.player)}`
+                            }>
+                                <IconButton
+                                    component="a"
+                                    href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    size="small"
+                                    onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
+                                    }}
+                                    sx={{
+                                        p: 0.5,
+                                        color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
+                                    }}
+                                >
+                                    <VideocamIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+
+                        {/* Linked accounts icon */}
                         {playerData.player.linked_accounts &&
                             playerData.player.linked_accounts.length > 0 && (
                                 <Badge
