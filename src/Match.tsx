@@ -41,6 +41,7 @@ import {
     BarChart as BarChartIcon,
     Link as LinkIcon,
     Videocam as VideocamIcon, // Added for Twitch streaming
+    Warning as WarningIcon, // Added for reputation.gg status
 } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
 import { fetchWithAuth } from './utils/api';
@@ -90,6 +91,14 @@ interface TwitchInfo {
     };
 }
 
+// Add reputation.gg status interface
+interface ReputationGGStatus {
+    type: string;
+    reason: string;
+    source: string;
+    createdAt: string;
+}
+
 interface PlayerStats {
     max_rank_id: number;
     max_rank: string;
@@ -117,10 +126,11 @@ interface PlayerInfo {
     profile_id: string;
     uuid: string;
     profile_pic_url: string;
-    locker_link: string;
+    r6_tracker_link: string;
     statscc_link: string;
     linked_accounts: LinkedAccount[];
     twitch_info?: TwitchInfo[]; // Added twitch_info field
+    reputation_gg_status?: ReputationGGStatus | null; // Added reputation.gg status field
     current_platform_info?: {
         platform: string;
     }; // Added current platform info
@@ -213,6 +223,41 @@ function getTwitchStreamTitle(playerInfo: PlayerInfo): string | null {
         return playerInfo.twitch_info?.[0]?.data?.user?.stream?.title || null;
     } catch (e) {
         console.error("Error getting Twitch stream title:", e);
+        return null;
+    }
+}
+
+// Helper function to check if a player has reputation.gg status
+function hasReputationGGStatus(playerInfo: PlayerInfo): boolean {
+    try {
+        return Boolean(
+            playerInfo.reputation_gg_status &&
+            playerInfo.reputation_gg_status.source
+        );
+    } catch (e) {
+        console.error("Error checking reputation.gg status:", e);
+        return false;
+    }
+}
+
+// Helper function to get reputation.gg reason
+function getReputationGGReason(playerInfo: PlayerInfo): string | null {
+    try {
+        if (!hasReputationGGStatus(playerInfo)) return null;
+        return playerInfo.reputation_gg_status?.reason || null;
+    } catch (e) {
+        console.error("Error getting reputation.gg reason:", e);
+        return null;
+    }
+}
+
+// Helper function to get reputation.gg source URL
+function getReputationGGSource(playerInfo: PlayerInfo): string | null {
+    try {
+        if (!hasReputationGGStatus(playerInfo)) return null;
+        return playerInfo.reputation_gg_status?.source || null;
+    } catch (e) {
+        console.error("Error getting reputation.gg source:", e);
         return null;
     }
 }
@@ -508,6 +553,34 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                                 </IconButton>
                                             </Tooltip>
                                         )}
+
+                                        {/* Add Reputation.gg Status Icon */}
+                                        {hasReputationGGStatus(playerData.player) && getReputationGGSource(playerData.player) && (
+                                            <Tooltip title={`Reported on reputation.gg for: ${getReputationGGReason(playerData.player) || 'cheating'}`}>
+                                                <IconButton
+                                                    component="a"
+                                                    href={getReputationGGSource(playerData.player) || '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    size="small"
+                                                    onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                                        e.stopPropagation();
+                                                        e.preventDefault();
+                                                        window.open(getReputationGGSource(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                                    }}
+                                                    sx={{
+                                                        p: 0.5,
+                                                        color: 'warning.main',
+                                                    }}
+                                                >
+                                                    <img
+                                                        src="/assets/rep_gg.png"
+                                                        alt="reputation.gg"
+                                                        style={{ width: '20px', height: '20px' }}
+                                                    />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                     </Box>
 
                                     {playerData.player.persona.enabled && (
@@ -630,6 +703,44 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                 </>
                             )}
 
+                            {/* Reputation.gg Info Section */}
+                            {hasReputationGGStatus(playerData.player) && getReputationGGSource(playerData.player) && (
+                                <>
+                                    <Divider sx={{ my: 2 }} />
+                                    <Typography variant="subtitle2" gutterBottom color="warning">
+                                        <WarningIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                        Reputation.gg Report
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary">Reason</Typography>
+                                        <Typography variant="body2" color="warning.main" fontWeight="bold">
+                                            {getReputationGGReason(playerData.player) || 'Unknown'}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                                        <Typography variant="body2" color="text.secondary">Report</Typography>
+                                        <Button
+                                            component="a"
+                                            href={getReputationGGSource(playerData.player) || '#'}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            variant="text"
+                                            color="warning"
+                                            endIcon={<LaunchIcon fontSize="small" />}
+                                            sx={{
+                                                textTransform: 'none',
+                                            }}
+                                            onClick={(e: React.MouseEvent) => {
+                                                e.stopPropagation();
+                                                window.open(getReputationGGSource(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                            }}
+                                        >
+                                            View on reputation.gg
+                                        </Button>
+                                    </Box>
+                                </>
+                            )}
+
                             {playerData.player.linked_accounts.length > 0 && (
                                 <>
                                     <Divider sx={{ my: 2 }} />
@@ -688,15 +799,15 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                 color="primary"
                                 fullWidth
                                 startIcon={<LaunchIcon />}
-                                href={playerData.player.locker_link}
+                                href={playerData.player.r6_tracker_link}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e: React.MouseEvent) => {
                                     e.stopPropagation();
-                                    window.open(playerData.player.locker_link, '_blank', 'noopener,noreferrer');
+                                    window.open(playerData.player.r6_tracker_link, '_blank', 'noopener,noreferrer');
                                 }}
                             >
-                                View Locker
+                                Tracker
                             </Button>
 
                             <Button
@@ -901,6 +1012,34 @@ export default function Match() {
                                         }}
                                     >
                                         <VideocamIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+
+                            {/* Add Reputation.gg Status Icon */}
+                            {hasReputationGGStatus(playerData.player) && getReputationGGSource(playerData.player) && (
+                                <Tooltip title={`Reported on reputation.gg for: ${getReputationGGReason(playerData.player) || 'cheating'}`}>
+                                    <IconButton
+                                        component="a"
+                                        href={getReputationGGSource(playerData.player) || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        size="small"
+                                        onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            window.open(getReputationGGSource(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                        }}
+                                        sx={{
+                                            p: 0.5,
+                                            color: 'warning.main',
+                                        }}
+                                    >
+                                        <img
+                                            src="/assets/rep_gg.png"
+                                            alt="reputation.gg"
+                                            style={{ width: '20px', height: '20px' }}
+                                        />
                                     </IconButton>
                                 </Tooltip>
                             )}
@@ -1157,10 +1296,10 @@ export default function Match() {
                                                                     startIcon={<LaunchIcon />}
                                                                     onClick={(e: React.MouseEvent) => {
                                                                         e.stopPropagation();
-                                                                        window.open(playerData.player.locker_link, '_blank', 'noopener,noreferrer');
+                                                                        window.open(playerData.player.r6_tracker_link, '_blank', 'noopener,noreferrer');
                                                                     }}
                                                                 >
-                                                                    Locker
+                                                                    Tracker
                                                                 </Button>
                                                                 <Button
                                                                     variant="outlined"
@@ -1333,10 +1472,10 @@ export default function Match() {
                                                                     startIcon={<LaunchIcon />}
                                                                     onClick={(e: React.MouseEvent) => {
                                                                         e.stopPropagation();
-                                                                        window.open(playerData.player.locker_link, '_blank', 'noopener,noreferrer');
+                                                                        window.open(playerData.player.r6_tracker_link, '_blank', 'noopener,noreferrer');
                                                                     }}
                                                                 >
-                                                                    Locker
+                                                                    Tracker
                                                                 </Button>
                                                                 <Button
                                                                     variant="outlined"

@@ -106,7 +106,7 @@ interface PlayerData {
         profile_id: string;
         uuid: string;
         profile_pic_url: string;
-        locker_link: string;
+        r6_tracker_link: string;
         linked_accounts: LinkedAccount[];
         persona: {
             tag: string;
@@ -595,16 +595,16 @@ export default function Lookup() {
                                                 color="primary"
                                                 size="small"
                                                 startIcon={<LaunchIcon />}
-                                                href={data.player.locker_link}
+                                                href={data.player.r6_tracker_link}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 sx={{ mt: 1 }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    window.open(data.player.locker_link, '_blank', 'noopener,noreferrer');
+                                                    window.open(data.player.r6_tracker_link, '_blank', 'noopener,noreferrer');
                                                 }}
                                             >
-                                                View Locker
+                                                Tracker
                                             </Button>
                                         </Box>
                                     </Box>
