@@ -1105,7 +1105,7 @@ export default function Match() {
                         mb: 3,
                         borderRadius: 2,
                         backgroundImage:
-                            'linear-gradient(to right, rgba(45,45,45,0.95), rgba(45,45,45,0.95)), url(https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/7qSZdEMRFLzLgiBDNmBUVP/fb4b112c8037c714230e863ade8a0b2f/r6s-header-mobile.jpg)',
+                            'linear-gradient(to right, rgba(45,45,45,0.95), rgba(45,45,45,0.95)), url(https://cdn.mos.cms.futurecdn.net/c8b6be020e726bd3692a76055b272b76.png)',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         boxShadow: 3,
