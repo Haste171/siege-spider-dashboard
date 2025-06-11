@@ -89,7 +89,7 @@ export default function Login() {
             >
                 <Box sx={{display: 'flex', alignItems: 'center', mb: 2}}>
                     <GamepadIcon sx={{fontSize: 32, mr: 2, color: 'primary.main'}}/>
-                    <Typography variant="h4">R6S Spider Login</Typography>
+                    <Typography variant="h4">Siege Spider Login</Typography>
                 </Box>
                 <Typography variant="body1" color="text.secondary">
                     Please log in to access the application

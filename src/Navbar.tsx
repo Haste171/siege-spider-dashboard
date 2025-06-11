@@ -72,7 +72,7 @@ const Navbar: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
                 <GamepadIcon sx={{ mr: 1 }} />
                 <Typography variant="h6" component="div">
-                    R6S Spider
+                    Siege Spider
                 </Typography>
             </Box>
             <Divider />
@@ -113,7 +113,7 @@ const Navbar: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <GamepadIcon sx={{ mr: 1 }} />
                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                            R6S Spider
+                            Siege Spider
                         </Typography>
                     </Box>
 

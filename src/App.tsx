@@ -6,6 +6,7 @@ import Lookup from './Lookup';
 import Bans from './Bans';
 import Login from './Login';
 import Match from './Match'; // Import the Match component
+import OutdatedClient from "./OutdatedClient";
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -70,11 +71,13 @@ function CustomRedirect() {
     );
   }
 
-  // Don't redirect if we're on match with parameters
+  // Redirect old match URLs with query parameters
   if (location.pathname === '/match' && location.search.includes('?')) {
+    // Use ProtectedRoute to handle authentication check
+    // If authenticated → goes to /outdated, if not → goes to /login
     return (
         <ProtectedRoute>
-          <Match />
+          <Navigate to="/outdated" replace />
         </ProtectedRoute>
     );
   }
@@ -100,6 +103,7 @@ function App() {
               <div style={{ flex: 1 }}>
                 <Routes>
                   <Route path="/login" element={<Login />} />
+                  <Route path="/outdated" element={<OutdatedClient />} />
                   <Route path="/" element={
                     <ProtectedRoute>
                       <Lookup />
@@ -115,9 +119,15 @@ function App() {
                       <Lookup />
                     </ProtectedRoute>
                   } />
-                  <Route path="/match" element={
+                  <Route path="/lookup/match/:matchId" element={
                     <ProtectedRoute>
                       <Match />
+                    </ProtectedRoute>
+                  } />
+                  {/* Direct /match route - check auth before redirecting to outdated */}
+                  <Route path="/match" element={
+                    <ProtectedRoute>
+                      <Navigate to="/outdated" replace />
                     </ProtectedRoute>
                   } />
                   {/* Custom catch-all that checks for valid routes with parameters */}

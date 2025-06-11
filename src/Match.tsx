@@ -43,7 +43,7 @@ import {
     Videocam as VideocamIcon, // Added for Twitch streaming
     Warning as WarningIcon, // Added for reputation.gg status
 } from '@mui/icons-material';
-import { useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { fetchWithAuth } from './utils/api';
 
 interface LinkedAccount {
@@ -863,8 +863,7 @@ export default function Match() {
     const [matchData, setMatchData] = useState<PlayerData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const location = useLocation();
-    // Remove unused navigate variable
+    const { matchId } = useParams<{ matchId: string }>();
     // Add a ref to track if we've already fetched data
     const dataFetchedRef = useRef<boolean>(false);
 
@@ -901,34 +900,16 @@ export default function Match() {
         setLinkedAccountsPlayer(null);
     };
 
-    // Parse the match identifiers from the URL
-    const parseMatchIdentifiers = () => {
-        const searchParams = new URLSearchParams(location.search);
-        const identifiersParam = searchParams.get('identifiers');
-
-        if (!identifiersParam) {
-            setError('No match identifiers provided in URL');
-            setLoading(false);
-            return null;
-        }
-
-        try {
-            // The URL format should be something like: ?identifiers=[{"profile_id1":1},{"profile_id2":1},...]
-            return JSON.parse(decodeURIComponent(identifiersParam));
-        } catch {
-            setError('Invalid match identifiers format');
-            setLoading(false);
-            return null;
-        }
-    };
-
     // Fetch match data from API
     const fetchMatchData = async () => {
+        if (!matchId) {
+            setError('No match ID provided in URL');
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
-
-        const identifiers = parseMatchIdentifiers();
-        if (!identifiers) return;
 
         try {
             const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/lookup/match`, {
@@ -936,7 +917,7 @@ export default function Match() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ identifiers }),
+                body: JSON.stringify({ match_id: matchId }),
             });
 
             if (!response.ok) {
@@ -953,17 +934,17 @@ export default function Match() {
         }
     };
 
-    // Load data on component mount or URL change
+    // Load data on component mount or match ID change
     useEffect(() => {
         // Use a ref to prevent duplicate API calls
-        if (dataFetchedRef.current === false && location.search) {
+        if (dataFetchedRef.current === false && matchId) {
             dataFetchedRef.current = true;
             fetchMatchData();
-        } else if (dataFetchedRef.current === true && !location.search) {
-            // Reset the ref if the search parameter is empty
+        } else if (dataFetchedRef.current === true && !matchId) {
+            // Reset the ref if the match ID is empty
             dataFetchedRef.current = false;
         }
-    }, [location.search]);
+    }, [matchId]);
 
     // Group players by team
     const team1Players = matchData.filter(player => player.team === 1);
@@ -1117,6 +1098,11 @@ export default function Match() {
                     </Box>
                     <Typography variant="body1" color="text.secondary">
                         View all players in the current match grouped by team
+                        {matchId && (
+                            <Typography component="span" sx={{ ml: 1, fontWeight: 'bold' }}>
+                                (Match ID: {matchId})
+                            </Typography>
+                        )}
                     </Typography>
                 </Paper>
 
