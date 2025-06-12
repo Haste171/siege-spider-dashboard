@@ -28,6 +28,7 @@ import {
     Tabs,
     Popover,
     Badge,
+    Stack
 } from '@mui/material';
 import {
     Gamepad as GamepadIcon,
@@ -42,6 +43,7 @@ import {
     Link as LinkIcon,
     Videocam as VideocamIcon, // Added for Twitch streaming
     Warning as WarningIcon, // Added for reputation.gg status
+    People as PeopleIcon
 } from '@mui/icons-material';
 import { useParams } from 'react-router-dom';
 import { fetchWithAuth } from './utils/api';
@@ -170,6 +172,12 @@ interface TabPanelProps {
     index: number;
     value: number;
 }
+
+interface TeamRelationships {
+    team_0_groups: string[][];
+    team_1_groups: string[][];
+}
+
 
 function TabPanel(props: TabPanelProps) {
     const { children, value, index, ...other } = props;
@@ -874,6 +882,7 @@ export default function Match() {
     // State for linked accounts popover
     const [linkedAccountsAnchorEl, setLinkedAccountsAnchorEl] = useState<HTMLElement | null>(null);
     const [linkedAccountsPlayer, setLinkedAccountsPlayer] = useState<PlayerData | null>(null);
+    const [teamRelationships, setTeamRelationships] = useState<TeamRelationships | null>(null);
     const linkedAccountsOpen = Boolean(linkedAccountsAnchorEl);
 
     // Handle opening player info dialog
@@ -934,14 +943,44 @@ export default function Match() {
         }
     };
 
+    const fetchTeamRelationships = async () => {
+        if (!matchId) return;
+
+        try {
+            const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/lookup/match/team_relationships`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    match_id: matchId,
+                    min_matches_together: 3 // You can make this configurable
+                }),
+            });
+
+            if (!response.ok) {
+                console.error('Failed to fetch team relationships');
+                return;
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                setTeamRelationships(data.data);
+            }
+        } catch (err) {
+            console.error('Error fetching team relationships:', err);
+        }
+    };
+
     // Load data on component mount or match ID change
     useEffect(() => {
-        // Use a ref to prevent duplicate API calls
         if (dataFetchedRef.current === false && matchId) {
             dataFetchedRef.current = true;
-            fetchMatchData();
+            fetchMatchData().then(() => {
+                // Fetch team relationships after match data is loaded
+                fetchTeamRelationships();
+            });
         } else if (dataFetchedRef.current === true && !matchId) {
-            // Reset the ref if the match ID is empty
             dataFetchedRef.current = false;
         }
     }, [matchId]);
@@ -950,125 +989,241 @@ export default function Match() {
     const team1Players = matchData.filter(player => player.team === 1);
     const team0Players = matchData.filter(player => player.team === 0);
 
+    const getPlayerGroupInfo = (playerId: string, teamNumber: number): { groupIndex: number, groupSize: number } | null => {
+        if (!teamRelationships) return null;
+
+        const groups = teamNumber === 0 ? teamRelationships.team_0_groups : teamRelationships.team_1_groups;
+
+        for (let i = 0; i < groups.length; i++) {
+            const groupIndex = groups[i].indexOf(playerId);
+            if (groupIndex !== -1) {
+                return { groupIndex: i, groupSize: groups[i].length };
+            }
+        }
+
+        return null;
+    };
+
+    const getGroupColor = (groupIndex: number): string => {
+        const colors = [
+            '#4CAF50', // Green
+            '#2196F3', // Blue
+            '#FF9800', // Orange
+            '#9C27B0', // Purple
+            '#F44336', // Red
+        ];
+        return colors[groupIndex % colors.length];
+    };
+
     // Function to render player cell with linked accounts icon
-    const renderPlayerCell = (playerData: PlayerData) => (
-        <TableCell>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar
-                    src={playerData.player.profile_pic_url}
-                    alt={playerData.player.name}
-                    sx={{ width: 40, height: 40, mr: 2 }}
-                />
-                <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    const renderPlayerCell = (playerData: PlayerData) => {
+        // Insert group logic
+        const groupInfo = getPlayerGroupInfo(playerData.player.profile_id, playerData.team);
+
+        return (
+            <TableCell>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {/* Group indicator bar before avatar */}
+                    {groupInfo && (
+                        <Tooltip title={`Squad of ${groupInfo.groupSize} players`}>
+                            <Box
+                                sx={{
+                                    width: 6,
+                                    height: 40,
+                                    backgroundColor: getGroupColor(groupInfo.groupIndex),
+                                    borderRadius: 1,
+                                    mr: 1,
+                                    position: 'relative',
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '100%',
+                                        transform: 'translateY(-50%)',
+                                        width: 0,
+                                        height: 0,
+                                        borderStyle: 'solid',
+                                        borderWidth: '6px 0 6px 8px',
+                                        borderColor: `transparent transparent transparent ${getGroupColor(groupInfo.groupIndex)}`,
+                                    }
+                                }}
+                            />
+                        </Tooltip>
+                    )}
+
+                    <Avatar
+                        src={playerData.player.profile_pic_url}
+                        alt={playerData.player.name}
+                        sx={{ width: 40, height: 40, mr: 2 }}
+                    />
+                    <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {/* Platform Icon */}
-                            {getPlatformIcon(playerData.player.current_platform_info?.platform)}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {/* Platform Icon */}
+                                {getPlatformIcon(playerData.player.current_platform_info?.platform)}
 
-                            <Typography variant="body1">
-                                {playerData.player.name}
-                            </Typography>
+                                <Typography variant="body1">
+                                    {playerData.player.name}
+                                </Typography>
 
-                            {/* Add Twitch Live Stream Icon */}
-                            {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
-                                <Tooltip title={
-                                    isLiveOnTwitch(playerData.player)
-                                        ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player) || 'Streaming'}`
-                                        : `Twitch: ${getTwitchChannelName(playerData.player)}`
-                                }>
-                                    <IconButton
-                                        component="a"
-                                        href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                {/* Add squad indicator if in a group */}
+                                {groupInfo && (
+                                    <Chip
+                                        icon={<PeopleIcon />}
+                                        label={`${groupInfo.groupSize}`}
                                         size="small"
-                                        onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
-                                        }}
                                         sx={{
-                                            p: 0.5,
-                                            color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
-                                        }}
-                                    >
-                                        <VideocamIcon fontSize="small" />
-                                    </IconButton>
-                                </Tooltip>
-                            )}
-
-                            {/* Add Reputation.gg Status Icon */}
-                            {hasReputationGGStatus(playerData.player) && getReputationGGSource(playerData.player) && (
-                                <Tooltip title={`Reported on reputation.gg for: ${getReputationGGReason(playerData.player) || 'cheating'}`}>
-                                    <IconButton
-                                        component="a"
-                                        href={getReputationGGSource(playerData.player) || '#'}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        size="small"
-                                        onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            window.open(getReputationGGSource(playerData.player) || '#', '_blank', 'noopener,noreferrer');
-                                        }}
-                                        sx={{
-                                            p: 0.5,
-                                            color: 'warning.main',
-                                        }}
-                                    >
-                                        <img
-                                            src="/assets/rep_gg.png"
-                                            alt="reputation.gg"
-                                            style={{ width: '20px', height: '20px' }}
-                                        />
-                                    </IconButton>
-                                </Tooltip>
-                            )}
-
-                            {/* Linked accounts icon */}
-                            {playerData.player.linked_accounts &&
-                                playerData.player.linked_accounts.length > 0 && (
-                                    <Badge
-                                        badgeContent={playerData.player.linked_accounts.length}
-                                        color={playerData.team === 1 ? "primary" : "secondary"}
-                                        sx={{
-                                            ml: 1,
-                                            '& .MuiBadge-badge': {
-                                                fontSize: '0.7rem',
-                                                minWidth: '20px',
-                                                height: '20px'
+                                            backgroundColor: getGroupColor(groupInfo.groupIndex),
+                                            color: 'white',
+                                            height: 20,
+                                            '& .MuiChip-icon': {
+                                                fontSize: 16,
+                                                color: 'white',
+                                            },
+                                            '& .MuiChip-label': {
+                                                px: 0.5,
+                                                fontSize: '0.75rem',
                                             }
                                         }}
-                                    >
+                                    />
+                                )}
+
+                                {/* Add Twitch Live Stream Icon */}
+                                {hasTwitchInfo(playerData.player) && getTwitchChannelName(playerData.player) && (
+                                    <Tooltip title={
+                                        isLiveOnTwitch(playerData.player)
+                                            ? `Live on Twitch: ${getTwitchStreamTitle(playerData.player) || 'Streaming'}`
+                                            : `Twitch: ${getTwitchChannelName(playerData.player)}`
+                                    }>
                                         <IconButton
+                                            component="a"
+                                            href={`https://twitch.tv/${getTwitchChannelName(playerData.player)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             size="small"
-                                            onClick={(e: React.MouseEvent<HTMLElement>) => handleOpenLinkedAccounts(e, playerData)}
+                                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                window.open(`https://twitch.tv/${getTwitchChannelName(playerData.player)}`, '_blank', 'noopener,noreferrer');
+                                            }}
                                             sx={{
-                                                border: `2px solid ${playerData.team === 1 ? 'primary.main' : 'secondary.main'}`,
                                                 p: 0.5,
-                                                backgroundColor: 'rgba(0,0,0,0.05)'
+                                                color: isLiveOnTwitch(playerData.player) ? 'error.main' : 'text.secondary',
                                             }}
                                         >
-                                            <LinkIcon
-                                                sx={{
-                                                    fontSize: '1.2rem',
-                                                    color: playerData.team === 1 ? 'primary.main' : 'secondary.main'
-                                                }}
+                                            <VideocamIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+
+                                {/* Add Reputation.gg Status Icon */}
+                                {hasReputationGGStatus(playerData.player) && getReputationGGSource(playerData.player) && (
+                                    <Tooltip title={`Reported on reputation.gg for: ${getReputationGGReason(playerData.player) || 'cheating'}`}>
+                                        <IconButton
+                                            component="a"
+                                            href={getReputationGGSource(playerData.player) || '#'}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="small"
+                                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                window.open(getReputationGGSource(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                            }}
+                                            sx={{
+                                                p: 0.5,
+                                                color: 'warning.main',
+                                            }}
+                                        >
+                                            <img
+                                                src="/assets/rep_gg.png"
+                                                alt="reputation.gg"
+                                                style={{ width: '20px', height: '20px' }}
                                             />
                                         </IconButton>
-                                    </Badge>
+                                    </Tooltip>
                                 )}
+
+                                {/* Linked accounts icon */}
+                                {playerData.player.linked_accounts &&
+                                    playerData.player.linked_accounts.length > 0 && (
+                                        <Badge
+                                            badgeContent={playerData.player.linked_accounts.length}
+                                            color={playerData.team === 1 ? "primary" : "secondary"}
+                                            sx={{
+                                                ml: 1,
+                                                '& .MuiBadge-badge': {
+                                                    fontSize: '0.7rem',
+                                                    minWidth: '20px',
+                                                    height: '20px'
+                                                }
+                                            }}
+                                        >
+                                            <IconButton
+                                                size="small"
+                                                onClick={(e: React.MouseEvent<HTMLElement>) => handleOpenLinkedAccounts(e, playerData)}
+                                                sx={{
+                                                    border: `2px solid ${playerData.team === 1 ? 'primary.main' : 'secondary.main'}`,
+                                                    p: 0.5,
+                                                    backgroundColor: 'rgba(0,0,0,0.05)'
+                                                }}
+                                            >
+                                                <LinkIcon
+                                                    sx={{
+                                                        fontSize: '1.2rem',
+                                                        color: playerData.team === 1 ? 'primary.main' : 'secondary.main'
+                                                    }}
+                                                />
+                                            </IconButton>
+                                        </Badge>
+                                    )}
+                            </Box>
                         </Box>
+                        {playerData.player.persona.enabled && (
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                {playerData.player.persona.nickname}
+                            </Typography>
+                        )}
                     </Box>
-                    {playerData.player.persona.enabled && (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                            {playerData.player.persona.nickname}
-                        </Typography>
-                    )}
                 </Box>
+            </TableCell>
+        );
+    };
+
+    // Component to show a legend for the groups
+    const GroupLegend = ({ teamNumber }: { teamNumber: number }) => {
+        if (!teamRelationships) return null;
+
+        const groups = teamNumber === 0 ? teamRelationships.team_0_groups : teamRelationships.team_1_groups;
+
+        if (groups.length === 0) return null;
+
+        return (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PeopleIcon fontSize="small" />
+                    Squad Groups
+                </Typography>
+                <Stack direction="row" spacing={2} flexWrap="wrap">
+                    {groups.map((group, index) => (
+                        <Chip
+                            key={index}
+                            icon={<PeopleIcon />}
+                            label={`Squad ${index + 1} (${group.length} players)`}
+                            size="small"
+                            sx={{
+                                backgroundColor: getGroupColor(index),
+                                color: 'white',
+                                '& .MuiChip-icon': {
+                                    color: 'white',
+                                }
+                            }}
+                        />
+                    ))}
+                </Stack>
             </Box>
-        </TableCell>
-    );
+        );
+    };
 
     return (
         <>
@@ -1305,6 +1460,9 @@ export default function Match() {
                                             </TableBody>
                                         </Table>
                                     </TableContainer>
+
+                                    {/* Group legend for Team 1 */}
+                                    <GroupLegend teamNumber={1} />
                                 </CardContent>
                             </Card>
                         )}
@@ -1481,6 +1639,9 @@ export default function Match() {
                                             </TableBody>
                                         </Table>
                                     </TableContainer>
+
+                                    {/* Group legend for Team 0 */}
+                                    <GroupLegend teamNumber={0} />
                                 </CardContent>
                             </Card>
                         )}
