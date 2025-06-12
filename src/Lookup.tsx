@@ -462,9 +462,26 @@ export default function Lookup() {
             <CssBaseline/>
             <Box
                 sx={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    minHeight: '100vh',
+                    backgroundImage: 'linear-gradient(to bottom, rgba(26,26,26,0.85), rgba(26,26,26,0.9)), url(assets/background/villa1.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundAttachment: 'fixed',
+                    backgroundRepeat: 'no-repeat',
+                    zIndex: -1
+                }}
+            />
+            <Box
+                sx={{
                     width: '100%',
                     px: { xs: 2, sm: 3, md: 4 },
-                    py: 2
+                    py: 2,
+                    position: 'relative',
+                    zIndex: 1
                 }}
             >
                 <Paper

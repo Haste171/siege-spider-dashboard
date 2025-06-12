@@ -121,6 +121,13 @@ interface PlayerStats {
     win_loss_ratio: number;
     abandons: number;
     risk_score: number;
+    peak_rank_data: PeakRankData;
+}
+
+interface PeakRankData {
+    peak_rank_id: number;
+    peak_rank: string;
+    peak_rank_points: number;
 }
 
 interface PlayerInfo {
@@ -1227,14 +1234,35 @@ export default function Match() {
 
     return (
         <>
-            <CssBaseline />
+            <CssBaseline/>
             <Box
                 sx={{
-                    width: '100%',
-                    px: { xs: 2, sm: 3, md: 4 },
-                    py: 2
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%', // Changed from 100vw
+                    minHeight: '100vh',
+                    overflowY: 'auto', // Only show vertical scrollbar when needed
+                    pt: 8, // Top padding for navbar
+                    px: 0, // Remove side padding from main container
+                    pb: 2,
+                    backgroundImage: 'linear-gradient(to bottom, rgba(26,26,26,0.85), rgba(26,26,26,0.9)), url(/assets/background/villa1.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundAttachment: 'fixed',
+                    backgroundRepeat: 'no-repeat',
+                    display: 'flex',
+                    justifyContent: 'center' // Center the content
                 }}
             >
+                <Box
+                    sx={{
+                        width: '100%',
+                        maxWidth: '1400px', // Constrain max width
+                        px: { xs: 2, sm: 3, md: 4 }, // Add padding back for content
+                        py: 2
+                    }}
+                >
                 <Paper
                     sx={{
                         p: 3,
@@ -1303,9 +1331,10 @@ export default function Match() {
                                                 <TableRow>
                                                     <TableCell>Player</TableCell>
                                                     <TableCell align="center">Level</TableCell>
-                                                    <TableCell align="center">Rank</TableCell>
-                                                    <TableCell align="center">W/L Ratio</TableCell>
-                                                    <TableCell align="center">K/D Ratio</TableCell>
+                                                    <TableCell align="center">Max</TableCell>
+                                                    <TableCell align="center">Current</TableCell>
+                                                    <TableCell align="center">W/L</TableCell>
+                                                    <TableCell align="center">K/D</TableCell>
                                                     <TableCell align="center">Risk Score</TableCell>
                                                     <TableCell align="center">Actions</TableCell>
                                                 </TableRow>
@@ -1328,6 +1357,23 @@ export default function Match() {
                                                                 color="primary"
                                                                 size="small"
                                                             />
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            {playerData.player.stats.ranked.peak_rank_data.peak_rank_id > 0 ? (
+                                                                <Tooltip title={playerData.player.stats.ranked.peak_rank_data.peak_rank}>
+                                                                    <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                                                                        <img
+                                                                            src={`/assets/ranks/rank_${playerData.player.stats.ranked.peak_rank_data.peak_rank_id}.png`}
+                                                                            alt={playerData.player.stats.ranked.peak_rank_data.peak_rank}
+                                                                            style={{width: '40px', height: '40px'}}
+                                                                        />
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    Unranked
+                                                                </Typography>
+                                                            )}
                                                         </TableCell>
                                                         <TableCell align="center">
                                                             {playerData.player.stats.ranked.rank_id > 0 ? (
@@ -1482,9 +1528,10 @@ export default function Match() {
                                                 <TableRow>
                                                     <TableCell>Player</TableCell>
                                                     <TableCell align="center">Level</TableCell>
-                                                    <TableCell align="center">Rank</TableCell>
-                                                    <TableCell align="center">W/L Ratio</TableCell>
-                                                    <TableCell align="center">K/D Ratio</TableCell>
+                                                    <TableCell align="center">Max</TableCell>
+                                                    <TableCell align="center">Current</TableCell>
+                                                    <TableCell align="center">W/L</TableCell>
+                                                    <TableCell align="center">K/D</TableCell>
                                                     <TableCell align="center">Risk Score</TableCell>
                                                     <TableCell align="center">Actions</TableCell>
                                                 </TableRow>
@@ -1507,6 +1554,23 @@ export default function Match() {
                                                                 color="secondary"
                                                                 size="small"
                                                             />
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            {playerData.player.stats.ranked.peak_rank_data.peak_rank_id > 0 ? (
+                                                                <Tooltip title={playerData.player.stats.ranked.peak_rank_data.peak_rank}>
+                                                                    <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                                                                        <img
+                                                                            src={`/assets/ranks/rank_${playerData.player.stats.ranked.peak_rank_data.peak_rank_id}.png`}
+                                                                            alt={playerData.player.stats.ranked.peak_rank_data.peak_rank}
+                                                                            style={{width: '40px', height: '40px'}}
+                                                                        />
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    Unranked
+                                                                </Typography>
+                                                            )}
                                                         </TableCell>
                                                         <TableCell align="center">
                                                             {playerData.player.stats.ranked.rank_id > 0 ? (
@@ -1781,6 +1845,7 @@ export default function Match() {
                         </Box>
                     )}
                 </Popover>
+                </Box>
             </Box>
         </>
     );

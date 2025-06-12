@@ -22,7 +22,7 @@ const theme = createTheme({
       main: '#E56B1F', // R6S orange accent
     },
     background: {
-      default: '#1e1e1e',
+      default: 'transparent',
       paper: '#2d2d2d',
     },
     text: {
