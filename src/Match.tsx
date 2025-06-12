@@ -1359,7 +1359,7 @@ export default function Match() {
                                                             />
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            {playerData.player.stats.ranked.peak_rank_data.peak_rank_id > 0 ? (
+                                                            {playerData?.player?.stats?.ranked?.peak_rank_data && playerData.player.stats.ranked.peak_rank_data.peak_rank_id > 0 ? (
                                                                 <Tooltip title={playerData.player.stats.ranked.peak_rank_data.peak_rank}>
                                                                     <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
                                                                         <img
@@ -1556,7 +1556,7 @@ export default function Match() {
                                                             />
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            {playerData.player.stats.ranked.peak_rank_data.peak_rank_id > 0 ? (
+                                                            {playerData?.player?.stats?.ranked?.peak_rank_data && playerData.player.stats.ranked.peak_rank_data.peak_rank_id > 0 ? (
                                                                 <Tooltip title={playerData.player.stats.ranked.peak_rank_data.peak_rank}>
                                                                     <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
                                                                         <img
