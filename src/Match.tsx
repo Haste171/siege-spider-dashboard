@@ -1246,7 +1246,7 @@ export default function Match() {
                     pt: 8, // Top padding for navbar
                     px: 0, // Remove side padding from main container
                     pb: 2,
-                    backgroundImage: 'linear-gradient(to bottom, rgba(26,26,26,0.85), rgba(26,26,26,0.9)), url(/assets/background/villa1.jpg)',
+                    backgroundImage: 'linear-gradient(to bottom, rgba(26,26,26,0.85), rgba(26,26,26,0.9)), url(/assets/background/basic_1.webp)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundAttachment: 'fixed',
