@@ -277,6 +277,14 @@ function getReputationGGSource(playerInfo: PlayerInfo): string | null {
     }
 }
 
+function getR6TrackerLink(playerInfo: PlayerInfo): string | null {
+    return playerInfo.r6_tracker_link;
+}
+
+function getStatsccLink(playerInfo: PlayerInfo): string | null {
+    return playerInfo.statscc_link;
+}
+
 // Helper function to determine if risk score data exists
 function hasRiskData(stats: PlayerStats): boolean {
     return stats.risk_score !== undefined && stats.risk_score !== null;
@@ -595,6 +603,57 @@ function PlayerInfoDialog({ open, handleClose, playerData }: {
                                                     />
                                                 </IconButton>
                                             </Tooltip>
+                                        )}
+
+                                        {/* R6 Tracker Icon */}
+                                        {(
+                                                <IconButton
+                                                    component="a"
+                                                    href={getR6TrackerLink(playerData.player) || '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    size="small"
+                                                    onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                                        e.stopPropagation();
+                                                        e.preventDefault();
+                                                        window.open(getR6TrackerLink(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                                    }}
+                                                    sx={{
+                                                        p: 0.5,
+                                                        color: 'warning.main',
+                                                    }}
+                                                >
+                                                    <img
+                                                        src="/assets/r6_tracker.png"
+                                                        alt="reputation.gg"
+                                                        style={{ width: '20px', height: '20px' }}
+                                                    />
+                                                </IconButton>
+                                        )}
+                                        {/* Stats CC Icon */}
+                                        {(
+                                            <IconButton
+                                                component="a"
+                                                href={getStatsccLink(playerData.player) || '#'}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                size="small"
+                                                onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    window.open(getStatsccLink(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                                }}
+                                                sx={{
+                                                    p: 0.5,
+                                                    color: 'warning.main',
+                                                }}
+                                            >
+                                                <img
+                                                    src="/assets/stats_cc.png"
+                                                    alt="reputation.gg"
+                                                    style={{ width: '20px', height: '20px' }}
+                                                />
+                                            </IconButton>
                                         )}
                                     </Box>
 
@@ -1065,11 +1124,11 @@ export default function Match() {
                     />
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap' }}>
                                 {/* Platform Icon */}
                                 {getPlatformIcon(playerData.player.current_platform_info?.platform)}
 
-                                <Typography variant="body1">
+                                <Typography variant="body1" sx={{ flexShrink: 0 }}>
                                     {playerData.player.name}
                                 </Typography>
 
@@ -1151,6 +1210,58 @@ export default function Match() {
                                     </Tooltip>
                                 )}
 
+                                {/* R6 Tracker Icon */}
+                                <Tooltip title="View on R6 Tracker">
+                                    <IconButton
+                                        component="a"
+                                        href={getR6TrackerLink(playerData.player) || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        size="small"
+                                        onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            window.open(getR6TrackerLink(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                        }}
+                                        sx={{
+                                            p: 0.5,
+                                            color: 'text.secondary',
+                                        }}
+                                    >
+                                        <img
+                                            src="/assets/r6_tracker.png"
+                                            alt="R6 Tracker"
+                                            style={{ width: '20px', height: '20px' }}
+                                        />
+                                    </IconButton>
+                                </Tooltip>
+
+                                {/* Stats CC Icon */}
+                                <Tooltip title="View on Stats.cc">
+                                    <IconButton
+                                        component="a"
+                                        href={getStatsccLink(playerData.player) || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        size="small"
+                                        onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            window.open(getStatsccLink(playerData.player) || '#', '_blank', 'noopener,noreferrer');
+                                        }}
+                                        sx={{
+                                            p: 0.5,
+                                            color: 'text.secondary',
+                                        }}
+                                    >
+                                        <img
+                                            src="/assets/stats_cc.png"
+                                            alt="Stats.cc"
+                                            style={{ width: '20px', height: '20px' }}
+                                        />
+                                    </IconButton>
+                                </Tooltip>
+
                                 {/* Linked accounts icon */}
                                 {playerData.player.linked_accounts &&
                                     playerData.player.linked_accounts.length > 0 && (
@@ -1186,11 +1297,6 @@ export default function Match() {
                                     )}
                             </Box>
                         </Box>
-                        {playerData.player.persona.enabled && (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                {playerData.player.persona.nickname}
-                            </Typography>
-                        )}
                     </Box>
                 </Box>
             </TableCell>
@@ -1477,28 +1583,6 @@ export default function Match() {
                                                                 >
                                                                     Bans
                                                                 </Button>
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    size="small"
-                                                                    startIcon={<LaunchIcon />}
-                                                                    onClick={(e: React.MouseEvent) => {
-                                                                        e.stopPropagation();
-                                                                        window.open(playerData.player.r6_tracker_link, '_blank', 'noopener,noreferrer');
-                                                                    }}
-                                                                >
-                                                                    Tracker
-                                                                </Button>
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    size="small"
-                                                                    startIcon={<LaunchIcon />}
-                                                                    onClick={(e: React.MouseEvent) => {
-                                                                        e.stopPropagation();
-                                                                        window.open(playerData.player.statscc_link, '_blank', 'noopener,noreferrer');
-                                                                    }}
-                                                                >
-                                                                    stats.cc
-                                                                </Button>
                                                             </Box>
                                                         </TableCell>
                                                     </TableRow>
@@ -1673,28 +1757,6 @@ export default function Match() {
                                                                     }}
                                                                 >
                                                                     Bans
-                                                                </Button>
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    size="small"
-                                                                    startIcon={<LaunchIcon />}
-                                                                    onClick={(e: React.MouseEvent) => {
-                                                                        e.stopPropagation();
-                                                                        window.open(playerData.player.r6_tracker_link, '_blank', 'noopener,noreferrer');
-                                                                    }}
-                                                                >
-                                                                    Tracker
-                                                                </Button>
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    size="small"
-                                                                    startIcon={<LaunchIcon />}
-                                                                    onClick={(e: React.MouseEvent) => {
-                                                                        e.stopPropagation();
-                                                                        window.open(playerData.player.statscc_link, '_blank', 'noopener,noreferrer');
-                                                                    }}
-                                                                >
-                                                                    stats.cc
                                                                 </Button>
                                                             </Box>
                                                         </TableCell>
